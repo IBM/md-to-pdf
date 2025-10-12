@@ -1,0 +1,72 @@
+#!/bin/bash
+# Simple wrapper for Markdown to PDF conversion
+# Usage: ./md-to-pdf document.md
+
+if [ $# -eq 0 ]; then
+    echo "MD to PDF Converter"
+    echo "==================="
+    echo ""
+    echo "Usage: ./md-to-pdf document.md"
+    echo ""
+    echo "This will create document.pdf in the same directory"
+    echo ""
+    echo "Options:"
+    echo "  --help    Show this help message"
+    echo ""
+    exit 1
+fi
+
+INPUT_FILE="$1"
+
+if [ ! -f "$INPUT_FILE" ]; then
+    echo "❌ Error: File not found: $INPUT_FILE"
+    exit 1
+fi
+
+if [[ ! "$INPUT_FILE" == *.md ]]; then
+    echo "❌ Error: Input must be a Markdown (.md) file"
+    exit 1
+fi
+
+# Get the base name without extension
+BASE_NAME="${INPUT_FILE%.md}"
+PDF_FILE="${BASE_NAME}.pdf"
+
+echo "📄 Converting: $INPUT_FILE"
+echo "🎯 Output: $PDF_FILE"
+echo ""
+
+# Use pandoc for conversion
+pandoc "$INPUT_FILE" \
+    -o "$PDF_FILE" \
+    --pdf-engine=xelatex \
+    -V geometry:margin=1in \
+    -V fontsize=11pt \
+    -V linkcolor=blue \
+    -V urlcolor=blue \
+    -V toccolor=black \
+    --toc \
+    --toc-depth=2 \
+    -V documentclass=article \
+    -V papersize=letter \
+    -V colorlinks=true \
+    2>/dev/null || {
+    # Fallback to basic pandoc if xelatex not available
+    echo "⚠️  XeLaTeX not found, using basic pandoc conversion..."
+    pandoc "$INPUT_FILE" \
+        -o "$PDF_FILE" \
+        -V geometry:margin=1in \
+        -V fontsize=11pt \
+        --toc \
+        -V documentclass=article
+}
+
+if [ -f "$PDF_FILE" ]; then
+    SIZE=$(ls -lh "$PDF_FILE" | awk '{print $5}')
+    echo "✅ PDF created successfully!"
+    echo "   File: $PDF_FILE"
+    echo "   Size: $SIZE"
+else
+    echo "❌ PDF conversion failed"
+    exit 1
+fi
