@@ -96,8 +96,8 @@ Examples:
     
     parser.add_argument(
         "--version", 
-        action="version", 
-        version="%(prog)s 1.0.0"
+        action="version",
+        version="%(prog)s 1.1.0"
     )
     
     args = parser.parse_args()

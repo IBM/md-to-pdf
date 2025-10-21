@@ -52,7 +52,7 @@ playwright install chromium
 pip wheel . --no-deps
 
 # Install the generated wheel file
-pip install md_to_pdf-1.0.0-py3-none-any.whl
+pip install md_to_pdf-1.1.0-py3-none-any.whl
 
 # Install Playwright browsers
 playwright install chromium
