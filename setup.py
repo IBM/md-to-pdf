@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="md-to-pdf",
-    version="1.0.0",
+    version="1.1.0",
     author="md-to-pdf Team",
     author_email="user@example.com",
     description="Professional Markdown to PDF converter with Mermaid diagrams and clickable links",

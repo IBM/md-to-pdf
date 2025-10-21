@@ -63,9 +63,24 @@ def convert(md_file):
     html = re.sub(r'^## (.*?)$', lambda m: process_heading(m, 2), html, flags=re.MULTILINE)
     html = re.sub(r'^# (.*?)$', lambda m: process_heading(m, 1), html, flags=re.MULTILINE)
 
-    # Convert links - IMPORTANT: Do this before other formatting
-    # [text](url) style links
-    html = re.sub(r'\[([^\]]+)\]\(([^\)]+)\)', r'<a href="\2">\1</a>', html)
+    # Process images and links
+    def process_markdown_syntax(match):
+        # Check if this is an image (starts with !)
+        if match.group(0).startswith('!'):
+            alt_text = match.group(1)
+            url = match.group(2)
+            return f'<img src="{url}" alt="{alt_text}">'
+        else:
+            # Regular link
+            text = match.group(1)
+            url = match.group(2)
+            return f'<a href="{url}">{text}</a>'
+    
+    # Process both images and links with a single regex
+    # This ensures proper handling of both ![alt](url) and [text](url)
+    html = re.sub(r'(!?)\[([^\]]+)\]\(([^\)]+)\)',
+                 lambda m: f'<img src="{m.group(3)}" alt="{m.group(2)}">' if m.group(1) else f'<a href="{m.group(3)}">{m.group(2)}</a>',
+                 html)
 
     # Convert anchor links in table of contents
     for slug, title in headings.items():
@@ -466,6 +481,17 @@ hr {{
     border-top: 2px solid #ecf0f1;
     margin: 30px 0;
     page-break-after: avoid;
+}}
+
+/* Image styling */
+img {{
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 20px auto;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    page-break-inside: avoid;
 }}
 </style>
 </head>
