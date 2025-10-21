@@ -1,14 +1,49 @@
+Metadata-Version: 2.4
+Name: md-to-pdf
+Version: 1.0.0
+Summary: Professional Markdown to PDF converter with Mermaid diagrams and clickable links
+Home-page: https://github.com/yourusername/md-to-pdf
+Author: md-to-pdf Team
+Author-email: user@example.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+Requires-Dist: playwright>=1.40.0
+Requires-Dist: markdown>=3.5.0
+Requires-Dist: beautifulsoup4>=4.12.0
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
 # MD to PDF Converter
 
 Professional Markdown to PDF converter with support for Mermaid diagrams, clickable links, and beautiful formatting.
 
 ## Installation
 
-### Option 1: Install from Source
+### Option 1: Install from PyPI (Recommended)
+
+```bash
+# Install the package
+pip install md-to-pdf
+
+# Install Playwright browsers (required for PDF generation)
+playwright install chromium
+```
+
+### Option 2: Install from Source
 
 ```bash
 # Clone the repository
-git clone https://github.ibm.com/technology-garage-dach/md-to-pdf.git
+git clone https://github.com/yourusername/md-to-pdf.git
 cd md-to-pdf
 
 # Install the package
@@ -18,13 +53,10 @@ pip install .
 playwright install chromium
 ```
 
-### Option 2: Install from Wheel
+### Option 3: Install from Wheel
 
 ```bash
-# Generate the wheel file
-pip wheel . --no-deps
-
-# Install the generated wheel file
+# Download the wheel file
 pip install md_to_pdf-1.0.0-py3-none-any.whl
 
 # Install Playwright browsers
@@ -503,8 +535,6 @@ sudo apt-get install pandoc texlive-xelatex
 ## License
 
 MIT
-
-This project is based on [md-to-pdf](https://github.com/crarau/md-to-pdf). It was cloned on October 14 2025. The original license is MIT. The code of the original project was modified and enhanced using [IBM Bob](https://www.ibm.com/products/bob). 
 
 ---
 

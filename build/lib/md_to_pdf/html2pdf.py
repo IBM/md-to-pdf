@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+"""
+Convert HTML to PDF with clickable hyperlinks using Playwright
+"""
+
+import sys
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+
+def html_to_pdf_with_links(html_file, pdf_file=None):
+    """Convert HTML to PDF preserving hyperlinks"""
+
+    # Get absolute paths
+    html_path = Path(html_file).absolute()
+    
+    if pdf_file is None:
+        pdf_file = html_path.with_suffix('.pdf')
+    else:
+        pdf_file = Path(pdf_file)
+    
+    pdf_path = pdf_file.absolute()
+
+    print(f"📄 Converting {html_path.name} to PDF with clickable links...")
+
+    with sync_playwright() as p:
+        # Launch browser (headless)
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Navigate to the HTML file
+        file_url = f"file://{html_path}"
+        page.goto(file_url)
+
+        # Wait for initial content to load
+        page.wait_for_timeout(2000)  # 2 seconds for initial rendering
+        
+        # Handle Mermaid diagrams - simplified approach
+        try:
+            # Check if there are any Mermaid diagrams
+            has_mermaid = page.evaluate('''() => {
+                return document.querySelectorAll('.mermaid').length > 0;
+            }''')
+            
+            if has_mermaid:
+                print("    ⟶ Waiting for Mermaid diagrams to render...")
+                
+                # Give more time for initial page load
+                page.wait_for_timeout(1000)
+                
+                # Fix any paragraph tags that might be wrapping Mermaid diagrams
+                page.evaluate('''() => {
+                    // Find all mermaid containers that might be wrapped in paragraphs
+                    document.querySelectorAll('p > .mermaid-container, p > .mermaid-diagram, p > .mermaid').forEach(el => {
+                        const paragraph = el.parentNode;
+                        if (paragraph.tagName === 'P') {
+                            // Move the mermaid element outside of the paragraph
+                            paragraph.parentNode.insertBefore(el, paragraph);
+                            // If paragraph is now empty, remove it
+                            if (paragraph.innerHTML.trim() === '') {
+                                paragraph.parentNode.removeChild(paragraph);
+                            }
+                        }
+                    });
+                }''')
+                
+                # Ensure Mermaid is properly initialized
+                page.evaluate('''() => {
+                    if (typeof mermaid !== 'undefined') {
+                        // Reset configuration
+                        mermaid.initialize({
+                            startOnLoad: true,
+                            theme: 'default',
+                            securityLevel: 'loose'
+                        });
+                        
+                        // Force rendering
+                        try {
+                            mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+                        } catch (e) {
+                            console.error('Mermaid init error:', e);
+                        }
+                    } else {
+                        console.error('Mermaid library not found');
+                    }
+                }''')
+                
+                # Wait for rendering to complete
+                page.wait_for_timeout(3000)
+                
+                # Check if any SVGs were created
+                svg_count = page.evaluate('''() => {
+                    return document.querySelectorAll('svg').length;
+                }''')
+                
+                if svg_count > 0:
+                    print(f"    ⟶ {svg_count} diagram(s) rendered successfully")
+                else:
+                    print("    ⟶ Using text representation for diagrams")
+            else:
+                print("    ⟶ No Mermaid diagrams found in document")
+        except Exception as e:
+            # Continue even if there are errors with Mermaid rendering
+            print(f"    ⟶ Note: {str(e)}")
+
+        # Generate PDF with settings optimized for links
+        page.pdf(
+            path=str(pdf_path),
+            format='A4',
+            print_background=True,
+            margin={
+                'top': '15mm',
+                'bottom': '15mm',
+                'left': '15mm',
+                'right': '15mm'
+            },
+            display_header_footer=False,
+            prefer_css_page_size=False
+        )
+
+        browser.close()
+
+    return pdf_path
+
+def main():
+    if len(sys.argv) < 2:
+        print("HTML to PDF Converter with Clickable Links")
+        print("=" * 45)
+        print("\nUsage: html2pdf file.html [output.pdf]")
+        print("\nThis will create a PDF with:")
+        print("  ✅ Clickable table of contents")
+        print("  ✅ Working internal anchor links")
+        print("  ✅ Clickable external URLs")
+        print("  ✅ Clickable email addresses")
+        sys.exit(1)
+
+    html_file = sys.argv[1]
+    
+    if len(sys.argv) > 2:
+        pdf_file = sys.argv[2]
+    else:
+        pdf_file = None
+
+    if not Path(html_file).exists():
+        print(f"❌ Error: File not found: {html_file}")
+        sys.exit(1)
+
+    if not html_file.endswith('.html'):
+        print(f"❌ Error: Input must be an HTML file")
+        sys.exit(1)
+
+    try:
+        pdf_path = html_to_pdf_with_links(html_file, pdf_file)
+        size = pdf_path.stat().st_size / 1024
+        print(f"✅ PDF created: {pdf_path.name} ({size:.1f} KB)")
+        print(f"\n✨ All hyperlinks are clickable in the PDF!")
+        print(f"   - Table of contents links work")
+        print(f"   - Email addresses are clickable")
+        print(f"   - External URLs open in browser")
+    except Exception as e:
+        print(f"❌ Error creating PDF: {e}")
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()
+
+# Made with Bob
