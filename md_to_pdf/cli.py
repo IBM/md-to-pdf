@@ -7,11 +7,11 @@ Converts Markdown files to PDF with support for Mermaid diagrams and clickable l
 """
 
 import sys
-import os
 from pathlib import Path
 import argparse
-from typing import Optional, List
+from typing import Optional
 
+from md_to_pdf import __version__
 from md_to_pdf.md2html import convert_file as md_to_html
 from md_to_pdf.html2pdf import html_to_pdf_with_links
 
@@ -95,9 +95,9 @@ Examples:
     )
     
     parser.add_argument(
-        "--version", 
+        "--version",
         action="version",
-        version="%(prog)s 1.1.0"
+        version=f"%(prog)s {__version__}"
     )
     
     args = parser.parse_args()

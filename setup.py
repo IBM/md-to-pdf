@@ -34,10 +34,6 @@ setup(
         ],
     },
     include_package_data=True,
-    scripts=[
-        "convert-to-pdf.sh",
-        "md-to-pdf",
-    ],
 )
 
 # Made with Bob

@@ -7,12 +7,12 @@ Processes multiple files or directories at once.
 """
 
 import sys
-import os
 import argparse
 from pathlib import Path
 from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from md_to_pdf import __version__
 from md_to_pdf.cli import convert_md_to_pdf
 
 def find_markdown_files(path: str, recursive: bool = False) -> List[Path]:
@@ -165,9 +165,9 @@ Examples:
     )
     
     parser.add_argument(
-        "--version", 
+        "--version",
         action="version",
-        version="%(prog)s 1.1.0"
+        version=f"%(prog)s {__version__}"
     )
     
     args = parser.parse_args()

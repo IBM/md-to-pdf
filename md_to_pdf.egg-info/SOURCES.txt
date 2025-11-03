@@ -1,7 +1,5 @@
 LICENSE
 README.md
-convert-to-pdf.sh
-md-to-pdf
 setup.py
 md_to_pdf/__init__.py
 md_to_pdf/batch.py
