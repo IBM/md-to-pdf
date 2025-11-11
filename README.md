@@ -27,7 +27,7 @@ Please note: you can find the wheel files in the `dist` directory of this reposi
 pip wheel . --no-deps
 
 # Install the generated wheel file
-pip install md_to_pdf-1.1.0-py3-none-any.whl
+pip install md_to_pdf-1.1.2-py3-none-any.whl
 
 # Install Playwright browsers
 playwright install chromium
