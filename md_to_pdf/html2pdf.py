@@ -87,13 +87,56 @@ def html_to_pdf_with_links(html_file, pdf_file=None):
                 # Wait for rendering to complete
                 page.wait_for_timeout(3000)
                 
+                # Auto-detect and mark wide diagrams
+                page.evaluate('''() => {
+                    function detectAndMarkWideDiagrams() {
+                        const containers = document.querySelectorAll('.mermaid-container');
+                        
+                        containers.forEach(container => {
+                            const svg = container.querySelector('svg');
+                            if (!svg) return;
+                            
+                            // Get the SVG's natural (intrinsic) width
+                            const viewBox = svg.getAttribute('viewBox');
+                            let naturalWidth = 0;
+                            
+                            if (viewBox) {
+                                // Parse viewBox to get natural width
+                                const viewBoxValues = viewBox.split(/[\\s,]+/);
+                                naturalWidth = parseFloat(viewBoxValues[2]);
+                            } else {
+                                // Fallback to width attribute or computed width
+                                naturalWidth = parseFloat(svg.getAttribute('width')) || svg.getBBox().width;
+                            }
+                            
+                            // Get the current rendered width
+                            const renderedWidth = svg.getBoundingClientRect().width;
+                            
+                            // If the diagram is being scaled down, mark it as wide
+                            const scalingThreshold = 0.95;
+                            if (naturalWidth > renderedWidth * scalingThreshold) {
+                                container.classList.add('wide-diagram');
+                            }
+                        });
+                    }
+                    
+                    detectAndMarkWideDiagrams();
+                }''')
+                
                 # Check if any SVGs were created
                 svg_count = page.evaluate('''() => {
                     return document.querySelectorAll('svg').length;
                 }''')
                 
+                # Check how many wide diagrams were detected
+                wide_count = page.evaluate('''() => {
+                    return document.querySelectorAll('.mermaid-container.wide-diagram').length;
+                }''')
+                
                 if svg_count > 0:
                     print(f"    ⟶ {svg_count} diagram(s) rendered successfully")
+                    if wide_count > 0:
+                        print(f"    ⟶ {wide_count} wide diagram(s) using full printable width")
                 else:
                     print("    ⟶ Using text representation for diagrams")
             else:

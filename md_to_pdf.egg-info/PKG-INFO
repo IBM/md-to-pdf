@@ -47,6 +47,8 @@ playwright install chromium
 
 ### Option 2: Install from Wheel
 
+Please note: you can find the wheel files in the `dist` directory of this repository.
+
 ```bash
 # Generate the wheel file
 pip wheel . --no-deps

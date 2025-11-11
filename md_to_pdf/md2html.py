@@ -263,7 +263,51 @@ document.addEventListener('DOMContentLoaded', function() {{
             actorMargin: 50
         }}
     }});
+    
+    // Auto-detect wide diagrams after Mermaid renders
+    // Wait for Mermaid to complete rendering
+    setTimeout(function() {{
+        detectAndMarkWideDiagrams();
+    }}, 1000);
 }});
+
+// Function to detect wide diagrams and apply full-width styling
+function detectAndMarkWideDiagrams() {{
+    const containers = document.querySelectorAll('.mermaid-container');
+    
+    containers.forEach(container => {{
+        const svg = container.querySelector('svg');
+        if (!svg) return;
+        
+        // Get the SVG's natural (intrinsic) width
+        const viewBox = svg.getAttribute('viewBox');
+        let naturalWidth = 0;
+        
+        if (viewBox) {{
+            // Parse viewBox to get natural width
+            const viewBoxValues = viewBox.split(/\s+|,/);
+            naturalWidth = parseFloat(viewBoxValues[2]);
+        }} else {{
+            // Fallback to width attribute or computed width
+            naturalWidth = parseFloat(svg.getAttribute('width')) || svg.getBBox().width;
+        }}
+        
+        // Get the current rendered width
+        const renderedWidth = svg.getBoundingClientRect().width;
+        
+        // If the diagram is being scaled down (natural width > rendered width),
+        // it needs more space - mark it as wide
+        const scalingThreshold = 0.95; // 95% - if using more than 95% of space, consider it wide
+        if (naturalWidth > renderedWidth * scalingThreshold) {{
+            container.classList.add('wide-diagram');
+            console.log('Wide diagram detected:', {{
+                naturalWidth: naturalWidth,
+                renderedWidth: renderedWidth,
+                ratio: (naturalWidth / renderedWidth).toFixed(2)
+            }});
+        }}
+    }});
+}}
 </script>
 <style>
 @page {{
@@ -275,7 +319,7 @@ body {{
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     line-height: 1.6;
     color: #2c3e50;
-    max-width: 900px;
+    max-width: 180mm;  /* A4 width (210mm) minus margins (15mm × 2) */
     margin: 0 auto;
     padding: 20px;
     background: white;
@@ -394,6 +438,26 @@ em {{
     padding: 15px;
     border-radius: 5px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}}
+
+/* Wide diagram styling - expands to full printable width */
+.mermaid-container.wide-diagram {{
+    /* Break out of body constraint while respecting page margins */
+    width: 180mm;  /* Full A4 printable width */
+    max-width: 100vw;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -90mm;  /* Half of 180mm to center */
+    margin-right: -90mm;
+}}
+
+.mermaid-container.wide-diagram .mermaid-diagram {{
+    width: 100%;
+    max-width: 180mm;
+    padding: 15px 10px;  /* Slightly reduced horizontal padding for more space */
 }}
 
 /* Remove default pre styling for mermaid */
