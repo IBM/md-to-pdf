@@ -300,7 +300,7 @@ function detectAndMarkWideDiagrams() {{
         
         if (viewBox) {{
             // Parse viewBox to get natural width
-            const viewBoxValues = viewBox.split(/\s+|,/);
+            const viewBoxValues = viewBox.split(/\\s+|,/);
             naturalWidth = parseFloat(viewBoxValues[2]);
         }} else {{
             // Fallback to width attribute or computed width
