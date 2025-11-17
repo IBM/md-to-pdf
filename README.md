@@ -1,6 +1,6 @@
 # MD to PDF Converter
 
-Professional Markdown to PDF converter with support for Mermaid diagrams, clickable links, and beautiful formatting.
+Professional Markdown to PDF converter with support for Mermaid diagrams, clickable links, page orientation control, and beautiful formatting.
 
 ## Installation
 
@@ -27,7 +27,7 @@ Please note: you can find the wheel files in the `dist` directory of this reposi
 pip wheel . --no-deps
 
 # Install the generated wheel file
-pip install md_to_pdf-1.1.2-py3-none-any.whl
+pip install md_to_pdf-1.2.0-py3-none-any.whl
 
 # Install Playwright browsers
 playwright install chromium
@@ -40,11 +40,22 @@ After installation, the following commands will be available:
 ### 1. `md2pdf` - Convert Markdown to PDF
 
 ```bash
-# Basic usage
+# Basic usage (portrait, default)
 md2pdf document.md
 
 # Specify output file
 md2pdf document.md -o output.pdf
+
+# Landscape orientation
+md2pdf document.md -l
+md2pdf document.md --landscape
+
+# Explicit portrait orientation
+md2pdf document.md -p
+md2pdf document.md --portrait
+
+# Landscape with custom output
+md2pdf document.md -l -o wide-document.pdf
 
 # Keep intermediate HTML file
 md2pdf document.md --keep-html
@@ -73,14 +84,24 @@ html2pdf document.html output.pdf
 ### 4. `md2pdf-batch` - Batch Convert Multiple Files
 
 ```bash
-# Convert all Markdown files in a directory
+# Convert all Markdown files in a directory (portrait, default)
 md2pdf-batch docs/
+
+# Convert all files in landscape orientation
+md2pdf-batch docs/ -l
+md2pdf-batch docs/ --landscape
 
 # Convert recursively
 md2pdf-batch docs/ --recursive
 
+# Convert recursively in landscape
+md2pdf-batch docs/ -r -l
+
 # Specify output directory
 md2pdf-batch docs/ -o output/
+
+# Output directory with landscape orientation
+md2pdf-batch docs/ -o output/ -l
 
 # Keep intermediate HTML files
 md2pdf-batch docs/ --keep-html
@@ -89,11 +110,84 @@ md2pdf-batch docs/ --keep-html
 ## Features
 
 - ✅ Convert Markdown to PDF with professional formatting
-- ✅ Support for Mermaid diagrams
+- ✅ **Page orientation control** (portrait/landscape for A4 pages)
+- ✅ Support for Mermaid diagrams with auto-scaling
 - ✅ Clickable table of contents
 - ✅ Working hyperlinks and email addresses
 - ✅ Batch conversion of multiple files
+- ✅ Parallel processing for faster batch conversions
 - ✅ Custom styling and formatting options
+## Page Orientation
+
+The converter supports both **portrait** (default) and **landscape** orientations for A4 pages. This is particularly useful for documents with wide content such as tables, diagrams, or code blocks.
+
+### Orientation Options
+
+- **Portrait** (default): 210mm × 297mm (A4 standard)
+  - Content width: 180mm (after 15mm margins)
+  - Best for: Regular documents, text-heavy content, standard reports
+  
+- **Landscape**: 297mm × 210mm (A4 rotated)
+  - Content width: 267mm (after 15mm margins)
+  - Best for: Wide tables, large diagrams, code with long lines, presentations
+
+### Usage Examples
+
+#### Single File Conversion
+
+```bash
+# Portrait (default) - no flag needed
+md2pdf document.md
+
+# Landscape - use -l or --landscape flag
+md2pdf document.md -l
+md2pdf document.md --landscape
+
+# Explicit portrait - use -p or --portrait flag
+md2pdf document.md -p
+md2pdf document.md --portrait
+
+# Landscape with custom output name
+md2pdf wide-table-document.md -l -o tables.pdf
+```
+
+#### Batch Conversion
+
+```bash
+# Convert all files in landscape
+md2pdf-batch diagrams/ -l
+
+# Recursive conversion in landscape
+md2pdf-batch docs/ --recursive --landscape
+
+# Batch with output directory and landscape
+md2pdf-batch reports/ -o pdf-output/ -l
+```
+
+### When to Use Landscape Orientation
+
+Consider using landscape orientation when your document contains:
+
+- **Wide tables** with many columns
+- **Large Mermaid diagrams** (flowcharts, ER diagrams, sequence diagrams)
+- **Code blocks** with long lines that would wrap in portrait
+- **Wide images** or screenshots
+- **Presentation-style** content
+
+### Automatic Content Optimization
+
+The converter automatically optimizes content width based on orientation:
+
+- **Portrait mode**: Content uses 180mm width (optimal for reading)
+- **Landscape mode**: Content uses 267mm width (48% more horizontal space)
+- **Mermaid diagrams**: Automatically detect and utilize full printable width when needed
+- **Tables and code**: Benefit from increased horizontal space in landscape mode
+
+### Backward Compatibility
+
+Portrait orientation remains the default when no orientation flag is specified, ensuring backward compatibility with existing scripts and workflows.
+
+- ✅ Automatic content width optimization based on orientation
 
 ## Legacy Scripts
 
@@ -426,10 +520,31 @@ md2pdf-batch ./reports/ --recursive
 md2pdf-batch ./docs/ -o ./generated-pdfs/
 ```
 
-### Example 5: Two-Step Process with HTML Inspection
+### Example 5: Wide Tables in Landscape
 
 ```bash
-# Convert to HTML first
+# Document with wide tables or data
+md2pdf data-analysis.md -l
+```
+
+### Example 6: Mermaid Diagrams in Landscape
+
+```bash
+# Architecture diagrams that need more horizontal space
+md2pdf system-architecture.md --landscape
+```
+
+### Example 7: Batch Convert Diagrams to Landscape
+
+```bash
+# Convert all diagram files in landscape orientation
+md2pdf-batch ./diagrams/ -l -o ./pdf-diagrams/
+```
+
+### Example 8: Two-Step Process with HTML Inspection
+
+```bash
+# Convert to HTML first (with orientation)
 md2html technical-spec.md
 
 # Manually inspect or modify the HTML if needed
@@ -492,13 +607,20 @@ sudo apt-get install pandoc texlive-xelatex
 
 4. **For maximum link preservation:** All commands preserve links by default
 
-5. **Two-step conversion if needed:** Use `md2html` followed by `html2pdf` for manual control
+5. **Choose the right orientation:**
+   - Use **portrait** (default) for text-heavy documents and standard reports
+   - Use **landscape** (`-l` flag) for wide tables, large diagrams, or code with long lines
+   - Landscape provides 48% more horizontal space (267mm vs 180mm content width)
 
-6. **Custom styling:** Edit CSS in Python scripts or pandoc options in shell script
+6. **Two-step conversion if needed:** Use `md2html` followed by `html2pdf` for manual control
 
-7. **Large documents:** Consider splitting into chapters for easier navigation
+7. **Custom styling:** Edit CSS in Python scripts or pandoc options in shell script
 
-8. **Apple M1/M2/M3 compatibility:** The package is fully compatible with Apple Silicon
+8. **Large documents:** Consider splitting into chapters for easier navigation
+
+9. **Wide content optimization:** Mermaid diagrams automatically detect and use full printable width when needed
+
+10. **Apple M1/M2/M3 compatibility:** The package is fully compatible with Apple Silicon
 
 ---
 
