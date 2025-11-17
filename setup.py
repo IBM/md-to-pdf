@@ -8,11 +8,11 @@ setup(
     name="md-to-pdf",
     version="1.2.0",
     author="md-to-pdf Team",
-    author_email="user@example.com",
+    author_email="rene.auberger@de.ibm.com",
     description="Professional Markdown to PDF converter with Mermaid diagrams, clickable links, and page orientation control",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/md-to-pdf",
+    url="https://github.ibm.com/technology-garage-dach/md-to-pdf",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
