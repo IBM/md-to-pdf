@@ -9,7 +9,7 @@ Processes multiple files or directories at once.
 import sys
 import argparse
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Literal
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from md_to_pdf import __version__
@@ -44,10 +44,11 @@ def find_markdown_files(path: str, recursive: bool = False) -> List[Path]:
     return []
 
 def batch_convert(
-    paths: List[str], 
-    output_dir: Optional[str] = None, 
+    paths: List[str],
+    output_dir: Optional[str] = None,
     recursive: bool = False,
     keep_html: bool = False,
+    orientation: Literal['portrait', 'landscape'] = 'portrait',
     max_workers: int = 4
 ) -> List[Path]:
     """
@@ -58,6 +59,7 @@ def batch_convert(
         output_dir: Optional output directory for PDF files
         recursive: Whether to search recursively in directories
         keep_html: Whether to keep intermediate HTML files
+        orientation: Page orientation ('portrait' or 'landscape'), default 'portrait'
         max_workers: Maximum number of parallel conversions
         
     Returns:
@@ -95,10 +97,11 @@ def batch_convert(
             
             # Submit conversion task
             future = executor.submit(
-                convert_md_to_pdf, 
-                str(md_file), 
-                str(pdf_file), 
-                keep_html
+                convert_md_to_pdf,
+                str(md_file),
+                str(pdf_file),
+                keep_html,
+                orientation
             )
             future_to_file[future] = (md_file, pdf_file)
         
@@ -126,11 +129,15 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  md2pdf-batch file1.md file2.md           # Convert specific files
-  md2pdf-batch docs/                       # Convert all .md files in docs/
-  md2pdf-batch docs/ --recursive           # Convert all .md files in docs/ and subdirectories
-  md2pdf-batch docs/ -o output/            # Save all PDFs to output/ directory
-  md2pdf-batch docs/ --keep-html           # Keep intermediate HTML files
+  md2pdf-batch file1.md file2.md              # Convert specific files (portrait)
+  md2pdf-batch docs/                          # Convert all .md files in docs/ (portrait)
+  md2pdf-batch docs/ -l                       # Convert all files in landscape
+  md2pdf-batch docs/ --landscape              # Convert all files in landscape
+  md2pdf-batch docs/ --recursive              # Convert recursively (portrait)
+  md2pdf-batch docs/ -r -l                    # Convert recursively in landscape
+  md2pdf-batch docs/ -o output/               # Save all PDFs to output/ directory
+  md2pdf-batch docs/ -o output/ -l            # Output directory with landscape
+  md2pdf-batch docs/ --keep-html              # Keep intermediate HTML files
         """
     )
     
@@ -146,13 +153,28 @@ Examples:
     )
     
     parser.add_argument(
-        "-r", "--recursive", 
+        "-r", "--recursive",
         action="store_true",
         help="Recursively search for Markdown files in directories"
     )
     
+    # Create mutually exclusive group for orientation
+    orientation_group = parser.add_mutually_exclusive_group()
+    
+    orientation_group.add_argument(
+        "-l", "--landscape",
+        action="store_true",
+        help="Use landscape orientation for A4 pages (default: portrait)"
+    )
+    
+    orientation_group.add_argument(
+        "-p", "--portrait",
+        action="store_true",
+        help="Use portrait orientation for A4 pages (default, explicit)"
+    )
+    
     parser.add_argument(
-        "--keep-html", 
+        "--keep-html",
         action="store_true",
         help="Keep intermediate HTML files"
     )
@@ -172,12 +194,16 @@ Examples:
     
     args = parser.parse_args()
     
+    # Determine orientation
+    orientation = 'landscape' if args.landscape else 'portrait'
+    
     try:
         batch_convert(
-            args.paths, 
-            args.output_dir, 
-            args.recursive, 
+            args.paths,
+            args.output_dir,
+            args.recursive,
             args.keep_html,
+            orientation,
             args.jobs
         )
     except Exception as e:
