@@ -56,7 +56,7 @@ def convert_md_to_pdf(
     
     # Step 1: Convert Markdown to HTML
     print(f"   ⟶ Converting Markdown to HTML...")
-    html_path = md_to_html(md_path, html_file)
+    html_path = md_to_html(md_path, html_file, orientation=orientation)
     
     # Step 2: Convert HTML to PDF
     print(f"   ⟶ Converting HTML to PDF with clickable links...")
@@ -83,24 +83,44 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  md2pdf document.md                 # Creates document.pdf
-  md2pdf document.md -o output.pdf   # Creates output.pdf
-  md2pdf document.md --keep-html     # Keeps the intermediate HTML file
+  md2pdf document.md                    # Creates document.pdf (portrait, default)
+  md2pdf document.md -o output.pdf      # Creates output.pdf (portrait)
+  md2pdf document.md -l                 # Creates document.pdf in landscape
+  md2pdf document.md --landscape        # Creates document.pdf in landscape
+  md2pdf document.md -p                 # Creates document.pdf in portrait (explicit)
+  md2pdf document.md --portrait         # Creates document.pdf in portrait (explicit)
+  md2pdf document.md -l -o wide.pdf     # Landscape with custom output name
+  md2pdf document.md --keep-html        # Keeps the intermediate HTML file
         """
     )
     
     parser.add_argument(
-        "input_file", 
+        "input_file",
         help="Path to the Markdown file"
     )
     
     parser.add_argument(
-        "-o", "--output", 
+        "-o", "--output",
         help="Path for the output PDF file"
     )
     
+    # Create mutually exclusive group for orientation
+    orientation_group = parser.add_mutually_exclusive_group()
+    
+    orientation_group.add_argument(
+        "-l", "--landscape",
+        action="store_true",
+        help="Use landscape orientation for A4 pages (default: portrait)"
+    )
+    
+    orientation_group.add_argument(
+        "-p", "--portrait",
+        action="store_true",
+        help="Use portrait orientation for A4 pages (default, explicit)"
+    )
+    
     parser.add_argument(
-        "--keep-html", 
+        "--keep-html",
         action="store_true",
         help="Keep the intermediate HTML file"
     )
@@ -113,8 +133,11 @@ Examples:
     
     args = parser.parse_args()
     
+    # Determine orientation: landscape flag takes precedence, portrait is default
+    orientation = 'landscape' if args.landscape else 'portrait'
+    
     try:
-        convert_md_to_pdf(args.input_file, args.output, args.keep_html)
+        convert_md_to_pdf(args.input_file, args.output, args.keep_html, orientation)
     except Exception as e:
         print(f"❌ Error: {e}", file=sys.stderr)
         sys.exit(1)

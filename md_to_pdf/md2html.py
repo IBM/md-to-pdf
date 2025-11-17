@@ -218,8 +218,23 @@ def convert(md_file):
     
     return html
 
-def create_html_document(title, content):
-    """Create complete HTML document with enhanced styling and link support"""
+def create_html_document(title, content, orientation='portrait'):
+    """
+    Create complete HTML document with enhanced styling and link support
+    
+    Args:
+        title: Document title
+        content: HTML content
+        orientation: Page orientation ('portrait' or 'landscape'), default 'portrait'
+    """
+    # Set page size with orientation
+    page_size = f"A4 {orientation}" if orientation == 'landscape' else "A4"
+    
+    # Calculate content width based on orientation
+    # A4 portrait: 210mm width - 30mm margins = 180mm
+    # A4 landscape: 297mm width - 30mm margins = 267mm
+    content_width = "267mm" if orientation == 'landscape' else "180mm"
+    
     return f'''<!DOCTYPE html>
 <html>
 <head>
@@ -311,7 +326,7 @@ function detectAndMarkWideDiagrams() {{
 </script>
 <style>
 @page {{
-    size: A4;
+    size: {page_size};
     margin: 15mm;
 }}
 
@@ -319,7 +334,7 @@ body {{
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     line-height: 1.6;
     color: #2c3e50;
-    max-width: 180mm;  /* A4 width (210mm) minus margins (15mm × 2) */
+    max-width: {content_width};  /* Page width minus margins (15mm × 2) */
     margin: 0 auto;
     padding: 20px;
     background: white;
@@ -443,20 +458,20 @@ em {{
 /* Wide diagram styling - expands to full printable width */
 .mermaid-container.wide-diagram {{
     /* Break out of body constraint while respecting page margins */
-    width: 180mm;  /* Full A4 printable width */
+    width: {content_width};  /* Full printable width based on orientation */
     max-width: 100vw;
     margin-left: auto;
     margin-right: auto;
     position: relative;
     left: 50%;
     right: 50%;
-    margin-left: -90mm;  /* Half of 180mm to center */
-    margin-right: -90mm;
+    margin-left: calc(-{content_width} / 2);  /* Half of content width to center */
+    margin-right: calc(-{content_width} / 2);
 }}
 
 .mermaid-container.wide-diagram .mermaid-diagram {{
     width: 100%;
-    max-width: 180mm;
+    max-width: {content_width};
     padding: 15px 10px;  /* Slightly reduced horizontal padding for more space */
 }}
 
@@ -564,8 +579,15 @@ img {{
 </body>
 </html>'''
 
-def convert_file(md_file, html_file=None):
-    """Convert markdown file to HTML file"""
+def convert_file(md_file, html_file=None, orientation='portrait'):
+    """
+    Convert markdown file to HTML file
+    
+    Args:
+        md_file: Path to markdown file
+        html_file: Optional output HTML file path
+        orientation: Page orientation ('portrait' or 'landscape'), default 'portrait'
+    """
     md_path = Path(md_file)
     
     if html_file is None:
@@ -576,8 +598,8 @@ def convert_file(md_file, html_file=None):
     # Convert markdown to HTML
     html_content = convert(md_path)
     
-    # Create full HTML document
-    html_doc = create_html_document(md_path.stem, html_content)
+    # Create full HTML document with orientation
+    html_doc = create_html_document(md_path.stem, html_content, orientation)
     
     # Write HTML file
     html_file.write_text(html_doc)
