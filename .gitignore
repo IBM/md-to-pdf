@@ -11,3 +11,6 @@ build/
 #dist/
 *.egg-info/
 .bob/
+IMPLEMENTATION_PLAN_*.md
+ENHANCEMENT*.md
+PHASE*_SUMMARY.md

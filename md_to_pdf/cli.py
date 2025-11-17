@@ -9,13 +9,18 @@ Converts Markdown files to PDF with support for Mermaid diagrams and clickable l
 import sys
 from pathlib import Path
 import argparse
-from typing import Optional
+from typing import Optional, Literal
 
 from md_to_pdf import __version__
 from md_to_pdf.md2html import convert_file as md_to_html
 from md_to_pdf.html2pdf import html_to_pdf_with_links
 
-def convert_md_to_pdf(md_file: str, pdf_file: Optional[str] = None, keep_html: bool = False) -> Path:
+def convert_md_to_pdf(
+    md_file: str,
+    pdf_file: Optional[str] = None,
+    keep_html: bool = False,
+    orientation: Literal['portrait', 'landscape'] = 'portrait'
+) -> Path:
     """
     Convert a Markdown file to PDF with clickable links and Mermaid diagrams
     
@@ -23,9 +28,15 @@ def convert_md_to_pdf(md_file: str, pdf_file: Optional[str] = None, keep_html: b
         md_file: Path to the Markdown file
         pdf_file: Optional path for the output PDF file
         keep_html: Whether to keep the intermediate HTML file
+        orientation: Page orientation for the PDF. Must be either 'portrait' or
+                     'landscape'. Defaults to 'portrait' for backward compatibility.
         
     Returns:
         Path to the generated PDF file
+        
+    Raises:
+        FileNotFoundError: If md_file does not exist
+        ValueError: If md_file is not a .md file or orientation is invalid
     """
     md_path = Path(md_file)
     
@@ -49,7 +60,7 @@ def convert_md_to_pdf(md_file: str, pdf_file: Optional[str] = None, keep_html: b
     
     # Step 2: Convert HTML to PDF
     print(f"   ⟶ Converting HTML to PDF with clickable links...")
-    pdf_path = html_to_pdf_with_links(html_path, pdf_path)
+    pdf_path = html_to_pdf_with_links(html_path, pdf_path, orientation=orientation)
     
     # Remove intermediate HTML file if not keeping it
     if not keep_html and html_path.exists():

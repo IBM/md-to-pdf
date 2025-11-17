@@ -5,10 +5,48 @@ Convert HTML to PDF with clickable hyperlinks using Playwright
 
 import sys
 from pathlib import Path
+from typing import Optional, Literal
 from playwright.sync_api import sync_playwright
 
-def html_to_pdf_with_links(html_file, pdf_file=None):
-    """Convert HTML to PDF preserving hyperlinks"""
+def html_to_pdf_with_links(
+    html_file,
+    pdf_file=None,
+    orientation: Optional[Literal['portrait', 'landscape']] = 'portrait'
+):
+    """
+    Convert HTML to PDF preserving hyperlinks
+    
+    Args:
+        html_file: Path to the HTML file to convert
+        pdf_file: Optional path for the output PDF file. If None, uses the same
+                  name as html_file with .pdf extension
+        orientation: Page orientation for the PDF. Must be either 'portrait' or
+                     'landscape'. Defaults to 'portrait' for backward compatibility.
+                     
+    Returns:
+        Path: Path object pointing to the generated PDF file
+        
+    Raises:
+        ValueError: If orientation is not 'portrait' or 'landscape'
+        FileNotFoundError: If html_file does not exist
+        
+    Examples:
+        >>> # Create portrait PDF (default)
+        >>> html_to_pdf_with_links('document.html')
+        
+        >>> # Create landscape PDF
+        >>> html_to_pdf_with_links('document.html', orientation='landscape')
+        
+        >>> # Create portrait PDF with custom output name
+        >>> html_to_pdf_with_links('input.html', 'output.pdf', orientation='portrait')
+    """
+    # Validate orientation parameter
+    valid_orientations = ('portrait', 'landscape')
+    if orientation not in valid_orientations:
+        raise ValueError(
+            f"Invalid orientation '{orientation}'. "
+            f"Must be one of: {', '.join(valid_orientations)}"
+        )
 
     # Get absolute paths
     html_path = Path(html_file).absolute()
@@ -146,9 +184,13 @@ def html_to_pdf_with_links(html_file, pdf_file=None):
             print(f"    ⟶ Note: {str(e)}")
 
         # Generate PDF with settings optimized for links
+        # Convert orientation to landscape boolean (True for landscape, False for portrait)
+        landscape = (orientation == 'landscape')
+        
         page.pdf(
             path=str(pdf_path),
             format='A4',
+            landscape=landscape,
             print_background=True,
             margin={
                 'top': '15mm',
