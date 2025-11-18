@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.2] - 2025-11-11
 
 ### Added
-- **Future Roadmap**: Added `FUTURE_IDEAS.md` with 140 lines documenting planned features and enhancements for future releases
+- **Future Roadmap**: Added `FUTURE_IDEAS.md` with 140 lines documenting possible features and enhancements for future releases
 - **Expanded Test Coverage**: Added comprehensive test cases in `test.md` to validate conversion functionality
 
 ### Changed
