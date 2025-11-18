@@ -1,5 +1,0 @@
-[console_scripts]
-html2pdf = md_to_pdf.html2pdf:main
-md2html = md_to_pdf.md2html:main
-md2pdf = md_to_pdf.cli:main
-md2pdf-batch = md_to_pdf.batch:main
