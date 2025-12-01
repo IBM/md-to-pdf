@@ -17,126 +17,21 @@ def slugify(text):
     slug = re.sub(r'[-\s]+', '-', slug)
     return slug.strip('-')
 
-def convert(md_file):
-    """Convert markdown to HTML with proper link handling"""
-    with open(md_file, 'r') as f:
-        content = f.read()
+def extract_and_protect_blocks(html, pattern, block_list, block_type):
+    """Generic block extraction and protection"""
+    def save_block(match):
+        content = match.group(1).strip() if block_type == 'mermaid' else match.group(1)
+        block_list.append(content)
+        return f'__{block_type.upper()}_BLOCK_{len(block_list)-1}__'
+    return re.sub(pattern, save_block, html, flags=re.DOTALL)
 
-    html = content
-
-    # Track all headings for anchor generation
-    headings = {}
-
-    # First pass: collect all headings and generate IDs
-    def process_heading(match, level):
-        text = match.group(1)
-        slug = slugify(text)
-        # Handle duplicate slugs
-        if slug in headings:
-            counter = 1
-            original_slug = slug
-            while f"{original_slug}-{counter}" in headings:
-                counter += 1
-            slug = f"{original_slug}-{counter}"
-        headings[slug] = text
-        return f'<h{level} id="{slug}">{text}</h{level}>'
-
-    # Extract and protect Mermaid blocks first
-    mermaid_blocks = []
-    def save_mermaid(match):
-        # Extract the content between the mermaid code fence markers
-        content = match.group(1).strip()
-        # Store the cleaned content
-        mermaid_blocks.append(content)
-        return f'__MERMAID_BLOCK_{len(mermaid_blocks)-1}__'
-    html = re.sub(r'```mermaid\n(.*?)```', save_mermaid, html, flags=re.DOTALL)
-
-    # Extract and protect code blocks
-    code_blocks = []
-    def save_code(match):
-        code_blocks.append(match.group(1))
-        return f'__CODE_BLOCK_{len(code_blocks)-1}__'
-    html = re.sub(r'```(.*?)```', save_code, html, flags=re.DOTALL)
-
-    # Convert headers with IDs for anchoring
-    html = re.sub(r'^#### (.*?)$', lambda m: process_heading(m, 4), html, flags=re.MULTILINE)
-    html = re.sub(r'^### (.*?)$', lambda m: process_heading(m, 3), html, flags=re.MULTILINE)
-    html = re.sub(r'^## (.*?)$', lambda m: process_heading(m, 2), html, flags=re.MULTILINE)
-    html = re.sub(r'^# (.*?)$', lambda m: process_heading(m, 1), html, flags=re.MULTILINE)
-
-    # Process images and links
-    def process_markdown_syntax(match):
-        # Check if this is an image (starts with !)
-        if match.group(0).startswith('!'):
-            alt_text = match.group(1)
-            url = match.group(2)
-            return f'<img src="{url}" alt="{alt_text}">'
-        else:
-            # Regular link
-            text = match.group(1)
-            url = match.group(2)
-            return f'<a href="{url}">{text}</a>'
-    
-    # Process both images and links with a single regex
-    # This ensures proper handling of both ![alt](url) and [text](url)
-    html = re.sub(r'(!?)\[([^\]]+)\]\(([^\)]+)\)',
-                 lambda m: f'<img src="{m.group(3)}" alt="{m.group(2)}">' if m.group(1) else f'<a href="{m.group(3)}">{m.group(2)}</a>',
-                 html)
-
-    # Convert anchor links in table of contents
-    for slug, title in headings.items():
-        # Replace [Title](#anchor) with proper link
-        html = html.replace(f'[{title}](#{slug})', f'<a href="#{slug}">{title}</a>')
-        # Also handle variations with different anchor formats
-        html = html.replace(f'](#{slug})', f'<a href="#{slug}">{title}</a>')
-
-    # Auto-link URLs
-    html = re.sub(r'(?<!href=")(?<!>)(https?://[^\s<]+)', r'<a href="\1">\1</a>', html)
-
-    # Convert email addresses
-    html = re.sub(r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})', r'<a href="mailto:\1">\1</a>', html)
-
-    # Convert formatting
-    html = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', html)
-    html = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<em>\1</em>', html)
-    html = re.sub(r'`([^`]+)`', r'<code>\1</code>', html)
-
-    # Convert horizontal rules
-    html = re.sub(r'^---$', r'<hr>', html, flags=re.MULTILINE)
-
-    # Convert tables
-    def convert_table(match):
-        lines = match.group(0).strip().split('\n')
-        if len(lines) < 3:
-            return match.group(0)
-
-        html_table = '<table>\n<thead>\n<tr>\n'
-        headers = [h.strip() for h in lines[0].split('|')[1:-1]]
-        for h in headers:
-            h = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', h)
-            html_table += f'<th>{h}</th>\n'
-        html_table += '</tr>\n</thead>\n<tbody>\n'
-
-        for line in lines[2:]:
-            if line.strip() and '|' in line:
-                cells = [c.strip() for c in line.split('|')[1:-1]]
-                html_table += '<tr>\n'
-                for c in cells:
-                    c = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', c)
-                    html_table += f'<td>{c}</td>\n'
-                html_table += '</tr>\n'
-        html_table += '</tbody>\n</table>'
-        return html_table
-
-    table_pattern = r'^\|[^\n]+\|\n\|[\s:\-\|]+\|\n(?:\|[^\n]+\|\n?)+'
-    html = re.sub(table_pattern, convert_table, html, flags=re.MULTILINE)
-
-    # Convert lists
+def convert_lists(html):
+    """Convert markdown lists to HTML with proper nesting"""
     lines = html.split('\n')
     result = []
     in_ul = False
     in_ol = False
-
+    
     for line in lines:
         # Unordered lists
         if line.strip().startswith('- '):
@@ -165,32 +60,30 @@ def convert(md_file):
                 result.append('</ol>')
                 in_ol = False
             result.append(line)
-
+    
     if in_ul:
         result.append('</ul>')
     if in_ol:
         result.append('</ol>')
+    
+    return '\n'.join(result)
 
-    html = '\n'.join(result)
-
-    # Restore code blocks
-    for i, block in enumerate(code_blocks):
-        html = html.replace(f'__CODE_BLOCK_{i}__', f'<pre><code>{block}</code></pre>')
-
-    # Restore Mermaid blocks - do this AFTER paragraph conversion
-    mermaid_placeholders = []
-    for i, block in enumerate(mermaid_blocks):
-        placeholder = f'__MERMAID_BLOCK_{i}__'
-        mermaid_placeholders.append((placeholder, block))
-
-    # Convert paragraphs
+def convert_paragraphs(html):
+    """Wrap non-HTML lines in paragraph tags"""
     lines = html.split('\n')
     result = []
     in_paragraph = False
-
+    in_pre_block = False
+    
     for line in lines:
         stripped = line.strip()
-        if stripped and not stripped.startswith('<'):
+        
+        # Track if we're inside a <pre> block (check before processing the line)
+        if '<pre' in line:
+            in_pre_block = True
+        
+        # Don't wrap content inside pre blocks or HTML tags
+        if stripped and not stripped.startswith('<') and not in_pre_block:
             if not in_paragraph:
                 result.append('<p>')
                 in_paragraph = True
@@ -200,22 +93,141 @@ def convert(md_file):
                 result.append('</p>')
                 in_paragraph = False
             result.append(line)
-
+        
+        # Check for closing pre tag after processing the line
+        if '</pre>' in line:
+            in_pre_block = False
+    
     if in_paragraph:
         result.append('</p>')
     
-    html = '\n'.join(result)
+    return '\n'.join(result)
+
+def apply_inline_formatting(html):
+    """Apply all inline markdown formatting"""
+    # Convert formatting
+    html = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', html)
+    html = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<em>\1</em>', html)
+    html = re.sub(r'`([^`]+)`', r'<code>\1</code>', html)
+    return html
+
+def restore_protected_blocks(html, code_blocks, mermaid_blocks):
+    """Restore all protected blocks with proper HTML wrapping"""
+    # Restore code blocks
+    for i, block in enumerate(code_blocks):
+        html = html.replace(f'__CODE_BLOCK_{i}__', f'<pre><code>{block}</code></pre>')
     
-    # Now restore Mermaid blocks after paragraph conversion
-    for placeholder, block in mermaid_placeholders:
-        html = html.replace(
-            placeholder,
-            f'''<div class="mermaid-container">
+    # Restore Mermaid blocks
+    for i, block in enumerate(mermaid_blocks):
+        placeholder = f'__MERMAID_BLOCK_{i}__'
+        mermaid_html = f'''<div class="mermaid-container">
 <div class="mermaid-diagram">
 <pre class="mermaid">{block}</pre>
 </div>
 </div>'''
-        )
+        html = html.replace(placeholder, mermaid_html)
+    
+    return html
+
+def convert_all_headings(html, headings_dict, process_heading_func):
+    """Process all heading levels in order (h4 to h1)"""
+    for level in range(4, 0, -1):
+        pattern = r'^' + '#' * level + r' (.*?)$'
+        html = re.sub(pattern, lambda m: process_heading_func(m, level),
+                     html, flags=re.MULTILINE)
+    return html
+
+def convert(md_file):
+    """Convert markdown to HTML with proper link handling"""
+    with open(md_file, 'r') as f:
+        content = f.read()
+
+    html = content
+
+    # Track all headings for anchor generation
+    headings = {}
+
+    # Define heading processor closure
+    def process_heading(match, level):
+        text = match.group(1)
+        slug = slugify(text)
+        # Handle duplicate slugs
+        if slug in headings:
+            counter = 1
+            original_slug = slug
+            while f"{original_slug}-{counter}" in headings:
+                counter += 1
+            slug = f"{original_slug}-{counter}"
+        headings[slug] = text
+        return f'<h{level} id="{slug}">{text}</h{level}>'
+
+    # Phase 1: Protect special blocks
+    mermaid_blocks = []
+    code_blocks = []
+    html = extract_and_protect_blocks(html, r'```mermaid\n(.*?)```', mermaid_blocks, 'mermaid')
+    html = extract_and_protect_blocks(html, r'```(.*?)```', code_blocks, 'code')
+
+    # Phase 2: Convert structural elements
+    html = convert_all_headings(html, headings, process_heading)
+    
+    # Process both images and links with a single regex
+    html = re.sub(r'(!?)\[([^\]]+)\]\(([^\)]+)\)',
+                 lambda m: f'<img src="{m.group(3)}" alt="{m.group(2)}">' if m.group(1) else f'<a href="{m.group(3)}">{m.group(2)}</a>',
+                 html)
+
+    # Convert anchor links in table of contents
+    for slug, title in headings.items():
+        # Replace [Title](#anchor) with proper link
+        html = html.replace(f'[{title}](#{slug})', f'<a href="#{slug}">{title}</a>')
+        # Also handle variations with different anchor formats
+        html = html.replace(f'](#{slug})', f'<a href="#{slug}">{title}</a>')
+
+    # Convert tables
+    def convert_table(match):
+        lines = match.group(0).strip().split('\n')
+        if len(lines) < 3:
+            return match.group(0)
+
+        html_table = '<table>\n<thead>\n<tr>\n'
+        headers = [h.strip() for h in lines[0].split('|')[1:-1]]
+        for h in headers:
+            h = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', h)
+            html_table += f'<th>{h}</th>\n'
+        html_table += '</tr>\n</thead>\n<tbody>\n'
+
+        for line in lines[2:]:
+            if line.strip() and '|' in line:
+                cells = [c.strip() for c in line.split('|')[1:-1]]
+                html_table += '<tr>\n'
+                for c in cells:
+                    c = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', c)
+                    html_table += f'<td>{c}</td>\n'
+                html_table += '</tr>\n'
+        html_table += '</tbody>\n</table>'
+        return html_table
+
+    table_pattern = r'^\|[^\n]+\|\n\|[\s:\-\|]+\|\n(?:\|[^\n]+\|\n?)+'
+    html = re.sub(table_pattern, convert_table, html, flags=re.MULTILINE)
+
+    # Phase 3: Convert inline elements
+    # Auto-link URLs
+    html = re.sub(r'(?<!href=")(?<!>)(https?://[^\s<]+)', r'<a href="\1">\1</a>', html)
+
+    # Convert email addresses
+    html = re.sub(r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})', r'<a href="mailto:\1">\1</a>', html)
+
+    # Apply inline formatting
+    html = apply_inline_formatting(html)
+
+    # Convert horizontal rules
+    html = re.sub(r'^---$', r'<hr>', html, flags=re.MULTILINE)
+
+    # Phase 4: Convert block elements
+    html = convert_lists(html)
+
+    # Phase 5: Restore protected blocks and wrap paragraphs
+    html = restore_protected_blocks(html, code_blocks, mermaid_blocks)
+    html = convert_paragraphs(html)
     
     return html
 
