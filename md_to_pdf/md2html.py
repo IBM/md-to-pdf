@@ -7,6 +7,7 @@ Handles internal anchors, external links, and table of contents
 import sys
 import re
 from pathlib import Path
+from md_to_pdf.fonts import get_google_fonts_url, get_font_css, DEFAULT_PRESET
 
 def slugify(text):
     """Convert heading text to URL-friendly slug for anchors"""
@@ -218,7 +219,7 @@ def convert(md_file):
     
     return html
 
-def create_html_document(title, content, orientation='portrait'):
+def create_html_document(title, content, orientation='portrait', font_preset='ibm'):
     """
     Create complete HTML document with enhanced styling and link support
     
@@ -226,6 +227,7 @@ def create_html_document(title, content, orientation='portrait'):
         title: Document title
         content: HTML content
         orientation: Page orientation ('portrait' or 'landscape'), default 'portrait'
+        font_preset: Font preset to use ('ibm', 'system', 'classic', 'modern'), default 'ibm'
     """
     # Set page size with orientation
     page_size = f"A4 {orientation}" if orientation == 'landscape' else "A4"
@@ -235,11 +237,26 @@ def create_html_document(title, content, orientation='portrait'):
     # A4 landscape: 297mm width - 30mm margins = 267mm
     content_width = "267mm" if orientation == 'landscape' else "180mm"
     
+    # Get font configuration
+    fonts = get_font_css(font_preset)
+    title_font, title_weight = fonts['title']
+    body_font, body_weight = fonts['body']
+    code_font, code_weight = fonts['code']
+    
+    # Get Google Fonts URL if needed
+    google_fonts_url = get_google_fonts_url(font_preset)
+    google_fonts_links = ''
+    if google_fonts_url:
+        google_fonts_links = f'''<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="{google_fonts_url}" rel="stylesheet">'''
+    
     return f'''<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>{title}</title>
+{google_fonts_links}
 <script src="https://unpkg.com/mermaid@11.12.0/dist/mermaid.min.js"></script>
 <script>
 // Wait for document to be fully loaded
@@ -262,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {{
         startOnLoad: true,  // Let Mermaid handle initialization
         theme: 'default',
         securityLevel: 'loose',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif',
+        fontFamily: '{body_font}, sans-serif',
         flowchart: {{
             htmlLabels: true,
             curve: 'linear'
@@ -331,7 +348,8 @@ function detectAndMarkWideDiagrams() {{
 }}
 
 body {{
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    font-family: {body_font}, sans-serif;
+    font-weight: {body_weight};
     line-height: 1.6;
     color: #2c3e50;
     max-width: {content_width};  /* Page width minus margins (15mm × 2) */
@@ -371,6 +389,8 @@ a:hover {{
 }}
 
 h1, h2, h3, h4 {{
+    font-family: {title_font}, sans-serif;
+    font-weight: {title_weight};
     page-break-after: avoid;
 }}
 
@@ -481,7 +501,7 @@ pre.mermaid {{
     padding: 0;
     overflow: visible;
     white-space: pre-wrap;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    font-family: {body_font}, sans-serif;
     font-size: 14px;
     line-height: 1.4;
     color: #333;
@@ -500,7 +520,7 @@ pre.mermaid {{
 
 /* Fix for Mermaid text */
 .mermaid .label {{
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    font-family: {body_font}, sans-serif;
     color: #333;
     font-weight: normal;
 }}
@@ -538,7 +558,8 @@ code {{
     background: #f4f4f4;
     padding: 2px 6px;
     border-radius: 3px;
-    font-family: 'Consolas', 'Monaco', monospace;
+    font-family: {code_font}, monospace;
+    font-weight: {code_weight};
     font-size: 0.9em;
 }}
 
@@ -548,6 +569,8 @@ pre {{
     border-radius: 5px;
     overflow-x: auto;
     page-break-inside: avoid;
+    font-family: {code_font}, monospace;
+    font-weight: {code_weight};
 }}
 
 pre code {{
@@ -579,7 +602,7 @@ img {{
 </body>
 </html>'''
 
-def convert_file(md_file, html_file=None, orientation='portrait'):
+def convert_file(md_file, html_file=None, orientation='portrait', font_preset='ibm'):
     """
     Convert markdown file to HTML file
     
@@ -587,6 +610,7 @@ def convert_file(md_file, html_file=None, orientation='portrait'):
         md_file: Path to markdown file
         html_file: Optional output HTML file path
         orientation: Page orientation ('portrait' or 'landscape'), default 'portrait'
+        font_preset: Font preset to use ('ibm', 'system', 'classic', 'modern'), default 'ibm'
     """
     md_path = Path(md_file)
     
@@ -598,8 +622,8 @@ def convert_file(md_file, html_file=None, orientation='portrait'):
     # Convert markdown to HTML
     html_content = convert(md_path)
     
-    # Create full HTML document with orientation
-    html_doc = create_html_document(md_path.stem, html_content, orientation)
+    # Create full HTML document with orientation and font preset
+    html_doc = create_html_document(md_path.stem, html_content, orientation, font_preset)
     
     # Write HTML file
     html_file.write_text(html_doc)

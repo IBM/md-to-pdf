@@ -5,6 +5,7 @@ Professional Markdown to PDF converter with support for Mermaid diagrams, clicka
 ## Features
 
 - ✅ Convert Markdown to PDF with professional formatting
+- ✅ **Custom font presets** (IBM Plex, system fonts, Georgia, Roboto)
 - ✅ **Page orientation control** (portrait/landscape for A4 pages)
 - ✅ Mermaid diagrams with auto-scaling
 - ✅ Clickable table of contents and hyperlinks
@@ -18,14 +19,17 @@ Professional Markdown to PDF converter with support for Mermaid diagrams, clicka
 pip install .
 playwright install chromium
 
-# Convert a document
+# Convert a document (IBM Plex fonts, portrait)
 md2pdf document.md
 
-# Convert with landscape orientation
+# Use different fonts
+md2pdf document.md --font-preset modern
+
+# Landscape orientation
 md2pdf document.md -l
 
-# Batch convert
-md2pdf-batch docs/ -o output/
+# Batch convert with custom fonts
+md2pdf-batch docs/ --font-preset classic -o output/
 ```
 
 ## Installation
@@ -43,7 +47,7 @@ playwright install chromium
 
 ```bash
 pip wheel . --no-deps
-pip install md_to_pdf-1.2.0-py3-none-any.whl
+pip install md_to_pdf-1.3.0-py3-none-any.whl
 playwright install chromium
 ```
 
@@ -54,14 +58,19 @@ playwright install chromium
 Convert Markdown files to PDF with one command.
 
 ```bash
-# Basic usage (portrait)
+# Basic usage (IBM Plex fonts, portrait)
 md2pdf document.md
+
+# Choose font preset
+md2pdf document.md --font-preset system    # System fonts
+md2pdf document.md --font-preset classic   # Georgia
+md2pdf document.md --font-preset modern    # Roboto
 
 # Landscape orientation
 md2pdf document.md -l
 
-# Custom output
-md2pdf document.md -o output.pdf
+# Combine options
+md2pdf document.md --font-preset modern -l -o output.pdf
 
 # Keep HTML file
 md2pdf document.md --keep-html
@@ -72,14 +81,17 @@ md2pdf document.md --keep-html
 Convert multiple files at once with parallel processing.
 
 ```bash
-# Convert directory
+# Convert directory (IBM Plex fonts)
 md2pdf-batch docs/
+
+# Use different fonts
+md2pdf-batch docs/ --font-preset classic
 
 # Recursive with landscape
 md2pdf-batch docs/ -r -l
 
-# Custom output directory
-md2pdf-batch docs/ -o output/
+# Combine options
+md2pdf-batch docs/ --font-preset modern -r -o output/
 ```
 
 ### `md2html` - Markdown to HTML
@@ -136,6 +148,43 @@ md2pdf-batch diagrams/ -l -o output/
 - Wide images or screenshots
 - Presentation-style content
 
+## Font Presets
+
+Choose from professional font combinations optimized for different document types.
+
+### Available Presets
+
+| Preset | Title Font | Body Font | Code Font | Best For |
+|--------|-----------|-----------|-----------|----------|
+| **ibm** (default) | IBM Plex Sans Bold | IBM Plex Sans Light | IBM Plex Mono Regular | Modern technical docs, IBM branding |
+| **system** | System fonts | System fonts | Monospace | Maximum compatibility, fast rendering |
+| **classic** | Georgia Bold | Georgia Regular | Courier New | Traditional documents, academic papers |
+| **modern** | Roboto Bold | Roboto Light | Roboto Mono Regular | Clean contemporary look, web-style docs |
+
+### Usage
+
+```bash
+# Default IBM Plex fonts
+md2pdf document.md
+
+# System fonts (old behavior)
+md2pdf document.md --font-preset system
+
+# Classic serif fonts
+md2pdf document.md --font-preset classic
+
+# Modern sans-serif
+md2pdf document.md --font-preset modern
+
+# Batch with custom fonts
+md2pdf-batch docs/ --font-preset classic -r
+```
+
+### Font Loading
+
+- **IBM & Modern presets**: Fonts loaded from Google Fonts (requires internet on first use)
+- **System & Classic presets**: Use locally installed fonts (no internet required)
+- All fonts include fallbacks for offline/compatibility
 
 ## Two-Step Workflow
 
@@ -182,12 +231,13 @@ All commands preserve links by default. If links aren't working, ensure you're u
 
 ## Tips & Best Practices
 
-1. **Use portrait for text-heavy documents** - Better readability for standard content
-2. **Use landscape for wide content** - Tables, diagrams, and code benefit from extra width
-3. **Batch processing** - Use `md2pdf-batch` for multiple files with parallel processing
-4. **Two-step conversion** - Use `md2html` then `html2pdf` when you need to inspect HTML
-5. **Mermaid diagrams** - Automatically scale to use available width
-6. **Large documents** - Consider splitting into chapters for easier navigation
+1. **Choose the right font preset** - IBM for modern tech docs, Classic for traditional documents, System for maximum compatibility
+2. **Use portrait for text-heavy documents** - Better readability for standard content
+3. **Use landscape for wide content** - Tables, diagrams, and code benefit from extra width
+4. **Batch processing** - Use `md2pdf-batch` for multiple files with parallel processing
+5. **Two-step conversion** - Use `md2html` then `html2pdf` when you need to inspect HTML
+6. **Mermaid diagrams** - Automatically scale to use available width
+7. **Large documents** - Consider splitting into chapters for easier navigation
 
 ## File Formats
 

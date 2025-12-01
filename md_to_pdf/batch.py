@@ -49,6 +49,7 @@ def batch_convert(
     recursive: bool = False,
     keep_html: bool = False,
     orientation: Literal['portrait', 'landscape'] = 'portrait',
+    font_preset: str = 'ibm',
     max_workers: int = 4
 ) -> List[Path]:
     """
@@ -60,6 +61,7 @@ def batch_convert(
         recursive: Whether to search recursively in directories
         keep_html: Whether to keep intermediate HTML files
         orientation: Page orientation ('portrait' or 'landscape'), default 'portrait'
+        font_preset: Font preset to use ('ibm', 'system', 'classic', 'modern'), default 'ibm'
         max_workers: Maximum number of parallel conversions
         
     Returns:
@@ -101,7 +103,8 @@ def batch_convert(
                 str(md_file),
                 str(pdf_file),
                 keep_html,
-                orientation
+                orientation,
+                font_preset
             )
             future_to_file[future] = (md_file, pdf_file)
         
@@ -129,15 +132,16 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  md2pdf-batch file1.md file2.md              # Convert specific files (portrait)
-  md2pdf-batch docs/                          # Convert all .md files in docs/ (portrait)
-  md2pdf-batch docs/ -l                       # Convert all files in landscape
-  md2pdf-batch docs/ --landscape              # Convert all files in landscape
-  md2pdf-batch docs/ --recursive              # Convert recursively (portrait)
-  md2pdf-batch docs/ -r -l                    # Convert recursively in landscape
-  md2pdf-batch docs/ -o output/               # Save all PDFs to output/ directory
-  md2pdf-batch docs/ -o output/ -l            # Output directory with landscape
-  md2pdf-batch docs/ --keep-html              # Keep intermediate HTML files
+  md2pdf-batch file1.md file2.md                    # IBM fonts (default), portrait
+  md2pdf-batch docs/                                # Convert all .md files in docs/
+  md2pdf-batch docs/ -l                             # Landscape orientation
+  md2pdf-batch docs/ --font-preset system           # System fonts
+  md2pdf-batch docs/ --font-preset modern -l        # Modern fonts, landscape
+  md2pdf-batch docs/ --recursive                    # Convert recursively
+  md2pdf-batch docs/ -r --font-preset classic       # Recursive with classic fonts
+  md2pdf-batch docs/ -o output/                     # Save all PDFs to output/
+  md2pdf-batch docs/ -o output/ -l                  # Output directory with landscape
+  md2pdf-batch docs/ --keep-html                    # Keep intermediate HTML files
         """
     )
     
@@ -180,6 +184,13 @@ Examples:
     )
     
     parser.add_argument(
+        "--font-preset",
+        choices=['ibm', 'system', 'classic', 'modern'],
+        default='ibm',
+        help="Font preset to use: 'ibm' (default, IBM Plex fonts), 'system' (system fonts), 'classic' (Georgia), 'modern' (Roboto)"
+    )
+    
+    parser.add_argument(
         "-j", "--jobs",
         type=int,
         default=4,
@@ -204,6 +215,7 @@ Examples:
             args.recursive,
             args.keep_html,
             orientation,
+            args.font_preset,
             args.jobs
         )
     except Exception as e:

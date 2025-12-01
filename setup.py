@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="md-to-pdf",
-    version="1.2.0",
+    version="1.3.0",
     author="md-to-pdf Team",
     author_email="rene.auberger@de.ibm.com",
     description="Professional Markdown to PDF converter with Mermaid diagrams, clickable links, and page orientation control",

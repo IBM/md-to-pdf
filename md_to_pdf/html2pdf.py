@@ -65,8 +65,9 @@ def html_to_pdf_with_links(
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
-        # Navigate to the HTML file
-        file_url = f"file://{html_path}"
+        # Navigate to the HTML file with proper URL encoding
+        # Use as_uri() to handle special characters like #, spaces, etc.
+        file_url = html_path.as_uri()
         page.goto(file_url)
 
         # Wait for initial content to load

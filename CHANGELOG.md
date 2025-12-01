@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-12-01
+
+### Added
+- **Custom font presets** for professional typography
+  - Added `--font-preset` option to `md2pdf` and `md2pdf-batch` commands
+  - **IBM preset** (new default): IBM Plex Sans (Light/Bold) + IBM Plex Mono (Regular)
+  - **System preset**: Platform-native fonts (previous default behavior)
+  - **Classic preset**: Georgia serif fonts for traditional documents
+  - **Modern preset**: Roboto sans-serif fonts for contemporary look
+- **Google Fonts integration** for IBM and Modern presets
+  - Automatic font loading from Google Fonts CDN
+  - Proper font weight specifications (300, 400, 700)
+  - Fallback fonts for offline/compatibility scenarios
+- **Font configuration module** ([`md_to_pdf/fonts.py`](md_to_pdf/fonts.py:1))
+  - Centralized font preset definitions
+  - Google Fonts URL generation with proper encoding
+  - Font CSS configuration helpers
+
+### Changed
+- **Default fonts**: Changed from system fonts to IBM Plex fonts for modern, professional appearance
+- Updated [`convert_md_to_pdf()`](md_to_pdf/cli.py:18) to accept `font_preset` parameter
+- Updated [`create_html_document()`](md_to_pdf/md2html.py:221) to generate font-aware CSS
+- Updated [`convert_file()`](md_to_pdf/md2html.py:582) to support font preset selection
+- Updated [`batch_convert()`](md_to_pdf/batch.py:46) to apply fonts consistently across batch operations
+- Enhanced HTML templates with Google Fonts `<link>` tags when needed
+- Updated CLI help text and examples to showcase font preset options
+
+### Fixed
+- **Special character handling in filenames**: Fixed `ERR_FILE_NOT_FOUND` errors for files with `#`, spaces, and other special characters
+  - Changed file URL construction in [`html_to_pdf_with_links()`](md_to_pdf/html2pdf.py:11) to use `Path.as_uri()` for proper URL encoding
+  - Files like `ENHANCEMENT #5 ORIENTATION.md` now convert successfully
+
+### Technical Details
+- New file: [`md_to_pdf/fonts.py`](md_to_pdf/fonts.py:1) - Font configuration and management
+- Modified files: [`cli.py`](md_to_pdf/cli.py:1), [`md2html.py`](md_to_pdf/md2html.py:1), [`html2pdf.py`](md_to_pdf/html2pdf.py:1), [`batch.py`](md_to_pdf/batch.py:1)
+- Font presets use CSS `font-family` and `font-weight` properties
+- Google Fonts loaded with `&display=swap` for optimal performance
+- Maintained backward compatibility via `system` preset
+
+### Documentation
+- Updated README.md with comprehensive font preset documentation
+- Added font preset comparison table
+- Updated all usage examples to show font options
+- Added font loading information and best practices
+
 ## [1.2.0] - 2025-11-17
 
 ### Added
@@ -141,6 +186,36 @@ Major cleanup by removing deprecated scripts and files, consolidating the codeba
 ---
 
 ## Migration Guide
+
+### Upgrading to 1.3.0
+
+Version 1.3.0 introduces custom font presets with IBM Plex fonts as the new default. The change is backward compatible.
+
+**What changed:**
+- Default fonts changed from system fonts to IBM Plex fonts
+- New `--font-preset` option available for font selection
+
+**Migration:**
+```bash
+# Old behavior (system fonts) - now requires explicit flag
+md2pdf document.md --font-preset system
+
+# New default (IBM Plex fonts) - no changes needed
+md2pdf document.md
+
+# New font options
+md2pdf document.md --font-preset classic   # Georgia
+md2pdf document.md --font-preset modern    # Roboto
+```
+
+**Benefits:**
+- Professional IBM Plex typography by default
+- Consistent appearance across platforms
+- Four preset options for different document styles
+- Google Fonts integration for IBM and Modern presets
+- No breaking changes - system fonts still available
+
+**Note:** IBM and Modern presets require internet connection on first use to download fonts from Google Fonts. Fonts are cached by the browser afterward.
 
 ### Upgrading to 1.2.0
 

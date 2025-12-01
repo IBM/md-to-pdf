@@ -14,12 +14,14 @@ from typing import Optional, Literal
 from md_to_pdf import __version__
 from md_to_pdf.md2html import convert_file as md_to_html
 from md_to_pdf.html2pdf import html_to_pdf_with_links
+from md_to_pdf.fonts import get_available_presets
 
 def convert_md_to_pdf(
     md_file: str,
     pdf_file: Optional[str] = None,
     keep_html: bool = False,
-    orientation: Literal['portrait', 'landscape'] = 'portrait'
+    orientation: Literal['portrait', 'landscape'] = 'portrait',
+    font_preset: str = 'ibm'
 ) -> Path:
     """
     Convert a Markdown file to PDF with clickable links and Mermaid diagrams
@@ -30,6 +32,8 @@ def convert_md_to_pdf(
         keep_html: Whether to keep the intermediate HTML file
         orientation: Page orientation for the PDF. Must be either 'portrait' or
                      'landscape'. Defaults to 'portrait' for backward compatibility.
+        font_preset: Font preset to use ('ibm', 'system', 'classic', 'modern').
+                     Defaults to 'ibm'.
         
     Returns:
         Path to the generated PDF file
@@ -56,7 +60,7 @@ def convert_md_to_pdf(
     
     # Step 1: Convert Markdown to HTML
     print(f"   ⟶ Converting Markdown to HTML...")
-    html_path = md_to_html(md_path, html_file, orientation=orientation)
+    html_path = md_to_html(md_path, html_file, orientation=orientation, font_preset=font_preset)
     
     # Step 2: Convert HTML to PDF
     print(f"   ⟶ Converting HTML to PDF with clickable links...")
@@ -83,14 +87,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  md2pdf document.md                    # Creates document.pdf (portrait, default)
-  md2pdf document.md -o output.pdf      # Creates output.pdf (portrait)
-  md2pdf document.md -l                 # Creates document.pdf in landscape
-  md2pdf document.md --landscape        # Creates document.pdf in landscape
-  md2pdf document.md -p                 # Creates document.pdf in portrait (explicit)
-  md2pdf document.md --portrait         # Creates document.pdf in portrait (explicit)
-  md2pdf document.md -l -o wide.pdf     # Landscape with custom output name
-  md2pdf document.md --keep-html        # Keeps the intermediate HTML file
+  md2pdf document.md                              # IBM fonts (default), portrait
+  md2pdf document.md -o output.pdf                # IBM fonts, portrait
+  md2pdf document.md -l                           # IBM fonts, landscape
+  md2pdf document.md --font-preset system         # System fonts, portrait
+  md2pdf document.md --font-preset modern -l      # Modern fonts, landscape
+  md2pdf document.md --font-preset classic        # Classic fonts, portrait
+  md2pdf document.md -l -o wide.pdf               # IBM fonts, landscape, custom output
+  md2pdf document.md --keep-html                  # Keeps the intermediate HTML file
         """
     )
     
@@ -126,6 +130,13 @@ Examples:
     )
     
     parser.add_argument(
+        "--font-preset",
+        choices=['ibm', 'system', 'classic', 'modern'],
+        default='ibm',
+        help="Font preset to use: 'ibm' (default, IBM Plex fonts), 'system' (system fonts), 'classic' (Georgia), 'modern' (Roboto)"
+    )
+    
+    parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}"
@@ -137,7 +148,13 @@ Examples:
     orientation = 'landscape' if args.landscape else 'portrait'
     
     try:
-        convert_md_to_pdf(args.input_file, args.output, args.keep_html, orientation)
+        convert_md_to_pdf(
+            args.input_file,
+            args.output,
+            args.keep_html,
+            orientation,
+            args.font_preset
+        )
     except Exception as e:
         print(f"❌ Error: {e}", file=sys.stderr)
         sys.exit(1)
