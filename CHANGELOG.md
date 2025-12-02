@@ -5,6 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-12-02
+
+### Added
+- **Auto-generated table of contents** with customizable options
+  - Added `--toc` flag to enable automatic TOC generation
+  - Added `--toc-depth` option to control heading levels (1-6, default: 3)
+  - Added `--toc-title` option for customizable TOC title (default: "Table of Contents")
+  - Added `--toc-position` option with three modes:
+    - `after_title` (default): Places TOC after first H1 heading
+    - `top`: Places TOC at document beginning
+    - `custom`: Places TOC at `{{TOC}}` marker location
+  - Added `--toc-include-first` flag to optionally include first H1 in TOC
+- **Internationalization support** for TOC titles
+  - Support for any language (German, French, Spanish, Japanese, Chinese, Arabic, etc.)
+  - HTML escaping for security (XSS prevention)
+- **Professional TOC styling** with CSS
+  - Properly nested lists based on heading hierarchy
+  - Clickable links to all sections
+  - Print-optimized design
+  - Responsive indentation for different heading levels
+
+### Changed
+- Updated [`generate_toc()`](md_to_pdf/md2html.py:140) to create nested HTML lists from heading structure
+- Updated [`insert_toc()`](md_to_pdf/md2html.py:216) to handle three positioning modes
+- Updated [`convert_md_to_pdf()`](md_to_pdf/cli.py:19) to accept TOC parameters
+- Updated [`batch_convert()`](md_to_pdf/batch.py:126) to support TOC in batch operations
+- Modified heading tracking from dict to list of tuples for proper document order
+- Enhanced [`create_html_document()`](md_to_pdf/md2html.py:727) with TOC CSS styling
+
+### Fixed
+- **HTML output location**: HTML files now correctly placed in output directory when using `-o` flag with `--keep-html`
+  - Previously, HTML files were created in source directory instead of output directory
+  - Fixed by determining HTML file path from PDF path instead of markdown path
+
+### Technical Details
+- Modified files: [`cli.py`](md_to_pdf/cli.py:1), [`md2html.py`](md_to_pdf/md2html.py:1), [`batch.py`](md_to_pdf/batch.py:1)
+- TOC generation uses proper HTML escaping for security
+- Heading tracking changed from `dict` to `list` of tuples `(slug, level, text)`
+- All TOC features are opt-in via `--toc` flag
+- Maintained backward compatibility with existing workflows
+
+### Documentation
+- Updated README.md with comprehensive TOC documentation
+- Added usage examples for all TOC options
+- Added internationalization examples in 10+ languages
+- Added TOC positioning guide with examples
+
 ## [1.3.1] - 2025-12-02
 
 ### Changed
@@ -205,6 +252,51 @@ Major cleanup by removing deprecated scripts and files, consolidating the codeba
 ---
 
 ## Migration Guide
+
+### Upgrading to 1.4.0
+
+Version 1.4.0 introduces automatic table of contents generation. The feature is fully backward compatible and opt-in.
+
+**What's new:**
+- Auto-generated table of contents with `--toc` flag
+- Customizable TOC title for internationalization
+- Three positioning modes (top, after_title, custom)
+- Configurable depth (1-6 heading levels)
+
+**Usage:**
+```bash
+# Enable TOC with defaults (after first H1, depth 3)
+md2pdf document.md --toc
+
+# Customize TOC title for different languages
+md2pdf document.md --toc --toc-title "Inhaltsverzeichnis"  # German
+md2pdf document.md --toc --toc-title "目次"                 # Japanese
+
+# Control TOC depth
+md2pdf document.md --toc --toc-depth 2  # Only H1 and H2
+
+# Position TOC at top of document
+md2pdf document.md --toc --toc-position top
+
+# Use custom position with {{TOC}} marker
+md2pdf document.md --toc --toc-position custom
+
+# Include first H1 in TOC
+md2pdf document.md --toc --toc-include-first
+
+# Batch conversion with TOC
+md2pdf-batch docs/ --toc --toc-title "Contents" -o output/
+```
+
+**Benefits:**
+- Automatic navigation for long documents
+- Clickable links to all sections
+- Professional styling that prints well
+- Support for any language
+- No breaking changes - feature is opt-in
+
+**Bug fix:**
+- HTML files now correctly placed in output directory when using `-o` with `--keep-html`
 
 ### Upgrading to 1.3.0
 
