@@ -15,6 +15,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from md_to_pdf import __version__
 from md_to_pdf.cli import convert_md_to_pdf
 
+# Default maximum number of parallel conversions
+DEFAULT_MAX_WORKERS = 4
+
 def find_markdown_files(path: str, recursive: bool = False) -> List[Path]:
     """
     Find all Markdown files in the given path
@@ -127,7 +130,7 @@ def batch_convert(
     keep_html: bool = False,
     orientation: Literal['portrait', 'landscape'] = 'portrait',
     font_preset: str = 'ibm',
-    max_workers: int = 4
+    max_workers: int = DEFAULT_MAX_WORKERS
 ) -> List[Path]:
     """
     Convert multiple Markdown files to PDF
@@ -192,8 +195,13 @@ def batch_convert(
     
     return pdf_files
 
-def main():
-    """Main entry point for the md2pdf-batch command"""
+def _create_argument_parser() -> argparse.ArgumentParser:
+    """
+    Create and configure the argument parser for the batch converter
+    
+    Returns:
+        Configured ArgumentParser instance
+    """
     parser = argparse.ArgumentParser(
         description="Batch convert Markdown files to PDF with clickable links and Mermaid diagrams",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -213,13 +221,13 @@ Examples:
     )
     
     parser.add_argument(
-        "paths", 
+        "paths",
         nargs='+',
         help="Paths to Markdown files or directories containing Markdown files"
     )
     
     parser.add_argument(
-        "-o", "--output-dir", 
+        "-o", "--output-dir",
         help="Output directory for PDF files"
     )
     
@@ -260,8 +268,8 @@ Examples:
     parser.add_argument(
         "-j", "--jobs",
         type=int,
-        default=4,
-        help="Maximum number of parallel conversions (default: 4)"
+        default=DEFAULT_MAX_WORKERS,
+        help=f"Maximum number of parallel conversions (default: {DEFAULT_MAX_WORKERS})"
     )
     
     parser.add_argument(
@@ -270,6 +278,11 @@ Examples:
         version=f"%(prog)s {__version__}"
     )
     
+    return parser
+
+def main():
+    """Main entry point for the md2pdf-batch command"""
+    parser = _create_argument_parser()
     args = parser.parse_args()
     
     # Determine orientation
@@ -285,7 +298,8 @@ Examples:
             args.font_preset,
             args.jobs
         )
-    except Exception as e:
+    except ValueError as e:
+        # Handle validation errors (e.g., invalid max_workers)
         print(f"❌ Error: {e}", file=sys.stderr)
         sys.exit(1)
 
