@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2025-12-02
+
+### Changed
+- **Code quality improvements**: Refactored codebase for better maintainability and type safety
+  - Improved batch module structure with extracted helper functions
+  - Enhanced type safety in batch processing operations
+  - Extracted browser operations for better code organization
+  - Added validation constants for improved code clarity
+- **Bug fixes**: Fixed Mermaid diagram rendering issues
+
+### Technical Details
+- Modified files: [`batch.py`](md_to_pdf/batch.py:1), [`cli.py`](md_to_pdf/cli.py:1), [`html2pdf.py`](md_to_pdf/html2pdf.py:1)
+- Refactored `main()` function in batch module for better structure
+- Extracted helper functions from `convert()` for improved readability
+- No breaking changes or new features
+
+### Distribution
+- Binary wheel: `dist/md_to_pdf_1.3.1-py3-none-any.whl`
+
 ## [1.3.0] - 2025-12-01
 
 ### Added
