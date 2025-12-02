@@ -43,6 +43,83 @@ def find_markdown_files(path: str, recursive: bool = False) -> List[Path]:
     
     return []
 
+def _determine_output_path(md_file: Path, output_dir: Optional[Path]) -> Path:
+    """
+    Determine the output PDF path for a markdown file
+    
+    Args:
+        md_file: Path to the markdown file
+        output_dir: Optional output directory
+        
+    Returns:
+        Path object for the output PDF file
+    """
+    if output_dir:
+        return output_dir / f"{md_file.stem}.pdf"
+    return md_file.with_suffix('.pdf')
+
+def _submit_conversion_tasks(
+    executor: ThreadPoolExecutor,
+    md_files: List[Path],
+    output_path: Optional[Path],
+    keep_html: bool,
+    orientation: Literal['portrait', 'landscape'],
+    font_preset: str
+) -> dict:
+    """
+    Submit conversion tasks to the executor
+    
+    Args:
+        executor: ThreadPoolExecutor instance
+        md_files: List of markdown files to convert
+        output_path: Optional output directory
+        keep_html: Whether to keep intermediate HTML files
+        orientation: Page orientation
+        font_preset: Font preset to use
+        
+    Returns:
+        Dictionary mapping futures to (md_file, pdf_file) tuples
+    """
+    future_to_file = {}
+    for md_file in md_files:
+        pdf_file = _determine_output_path(md_file, output_path)
+        
+        future = executor.submit(
+            convert_md_to_pdf,
+            str(md_file),
+            str(pdf_file),
+            keep_html,
+            orientation,
+            font_preset
+        )
+        future_to_file[future] = (md_file, pdf_file)
+    
+    return future_to_file
+
+def _process_conversion_results(future_to_file: dict) -> List[Path]:
+    """
+    Process completed conversion tasks and collect results
+    
+    Args:
+        future_to_file: Dictionary mapping futures to (md_file, pdf_file) tuples
+        
+    Returns:
+        List of successfully generated PDF files
+    """
+    pdf_files: List[Path] = []
+    for future in as_completed(future_to_file):
+        md_file, pdf_file = future_to_file[future]
+        try:
+            pdf_path = future.result()
+            # Ensure we return Path objects for type consistency
+            if isinstance(pdf_path, str):
+                pdf_path = Path(pdf_path)
+            pdf_files.append(pdf_path)
+        except Exception as e:
+            print(f"❌ Error converting {md_file.name}: {e}")
+    
+    return pdf_files
+
 def batch_convert(
     paths: List[str],
     output_dir: Optional[str] = None,
@@ -62,11 +139,18 @@ def batch_convert(
         keep_html: Whether to keep intermediate HTML files
         orientation: Page orientation ('portrait' or 'landscape'), default 'portrait'
         font_preset: Font preset to use ('ibm', 'system', 'classic', 'modern'), default 'ibm'
-        max_workers: Maximum number of parallel conversions
+        max_workers: Maximum number of parallel conversions (must be >= 1)
         
     Returns:
         List of generated PDF files
+        
+    Raises:
+        ValueError: If max_workers is less than 1
     """
+    # Validate max_workers parameter
+    if max_workers < 1:
+        raise ValueError("max_workers must be at least 1")
+    
     # Find all markdown files
     md_files = []
     for path in paths:
@@ -86,36 +170,19 @@ def batch_convert(
         print(f"📁 Output directory: {output_path}")
     
     # Convert files in parallel
-    pdf_files = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Create conversion tasks
-        future_to_file = {}
-        for md_file in md_files:
-            # Determine output PDF path
-            if output_path:
-                pdf_file = output_path / f"{md_file.stem}.pdf"
-            else:
-                pdf_file = md_file.with_suffix('.pdf')
-            
-            # Submit conversion task
-            future = executor.submit(
-                convert_md_to_pdf,
-                str(md_file),
-                str(pdf_file),
-                keep_html,
-                orientation,
-                font_preset
-            )
-            future_to_file[future] = (md_file, pdf_file)
+        # Submit conversion tasks
+        future_to_file = _submit_conversion_tasks(
+            executor,
+            md_files,
+            output_path,
+            keep_html,
+            orientation,
+            font_preset
+        )
         
         # Process results as they complete
-        for future in as_completed(future_to_file):
-            md_file, pdf_file = future_to_file[future]
-            try:
-                pdf_path = future.result()
-                pdf_files.append(pdf_path)
-            except Exception as e:
-                print(f"❌ Error converting {md_file.name}: {e}")
+        pdf_files = _process_conversion_results(future_to_file)
     
     # Print summary
     if pdf_files:
