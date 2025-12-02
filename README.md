@@ -5,10 +5,11 @@ Professional Markdown to PDF converter with support for Mermaid diagrams, clicka
 ## Features
 
 - ✅ Convert Markdown to PDF with professional formatting
+- ✅ **Auto-generated table of contents** with customizable depth, title, and positioning
 - ✅ **Custom font presets** (IBM Plex, system fonts, Georgia, Roboto)
 - ✅ **Page orientation control** (portrait/landscape for A4 pages)
 - ✅ Mermaid diagrams with auto-scaling
-- ✅ Clickable table of contents and hyperlinks
+- ✅ Clickable links and navigation
 - ✅ Batch conversion with parallel processing
 - ✅ Custom styling and formatting
 
@@ -22,14 +23,20 @@ playwright install chromium
 # Convert a document (IBM Plex fonts, portrait)
 md2pdf document.md
 
+# Generate table of contents
+md2pdf document.md --toc
+
 # Use different fonts
 md2pdf document.md --font-preset modern
 
 # Landscape orientation
 md2pdf document.md -l
 
-# Batch convert with custom fonts
-md2pdf-batch docs/ --font-preset classic -o output/
+# Combine features
+md2pdf document.md --toc --font-preset modern -l
+
+# Batch convert with TOC and custom fonts
+md2pdf-batch docs/ --toc --font-preset classic -o output/
 ```
 
 ## Installation
@@ -185,6 +192,129 @@ md2pdf-batch docs/ --font-preset classic -r
 - **IBM & Modern presets**: Fonts loaded from Google Fonts (requires internet on first use)
 - **System & Classic presets**: Use locally installed fonts (no internet required)
 - All fonts include fallbacks for offline/compatibility
+
+## Table of Contents
+
+Generate an automatic table of contents with customizable depth, title, and positioning.
+
+### Basic Usage
+
+```bash
+# Generate TOC with default settings
+md2pdf document.md --toc
+
+# Custom depth (default: 3, shows H1-H3)
+md2pdf document.md --toc --toc-depth 2
+
+# Custom title (for internationalization)
+md2pdf document.md --toc --toc-title "Contents"
+md2pdf document.md --toc --toc-title "Inhaltsverzeichnis"  # German
+md2pdf document.md --toc --toc-title "目次"                 # Japanese
+md2pdf document.md --toc --toc-title "Contenido"           # Spanish
+
+# Position at top (before document title)
+md2pdf document.md --toc --toc-position top
+
+# Include first H1 in TOC (by default it's excluded as document title)
+md2pdf document.md --toc --toc-include-first
+```
+
+### TOC Positioning
+
+Three positioning options are available:
+
+| Position | Description | Use Case |
+|----------|-------------|----------|
+| **after_title** (default) | After first H1 heading | Standard documents with title |
+| **top** | At the very beginning | Documents without H1 title |
+| **custom** | At `{{TOC}}` marker | Manual placement control |
+
+#### Custom Position Example
+
+Add `{{TOC}}` marker in your Markdown where you want the TOC:
+
+```markdown
+# My Document
+
+Introduction paragraph...
+
+{{TOC}}
+
+## Chapter 1
+Content...
+```
+
+Then convert with:
+
+```bash
+md2pdf document.md --toc --toc-position custom
+```
+
+### Batch Conversion with TOC
+
+Apply TOC settings to all files in batch conversion:
+
+```bash
+# Basic batch with TOC
+md2pdf-batch docs/ --toc
+
+# Custom settings for all files
+md2pdf-batch docs/ --toc --toc-depth 2 --toc-title "Contents"
+
+# Recursive with German TOC
+md2pdf-batch docs/ -r --toc --toc-title "Inhaltsverzeichnis"
+
+# Combine with other options
+md2pdf-batch docs/ --toc --font-preset modern -l -o output/
+```
+
+### TOC Features
+
+- **Automatic nesting** - Properly nested lists based on heading levels
+- **Clickable links** - All TOC entries link to their sections
+- **Customizable depth** - Control which heading levels appear (1-6)
+- **Skip first H1** - By default, first H1 is treated as document title
+- **HTML escaping** - Safe handling of special characters in titles
+- **Professional styling** - Clean, readable design that prints well
+
+### Internationalization Examples
+
+The `--toc-title` flag allows you to match the TOC title to your document's language:
+
+```bash
+# English (default)
+md2pdf document.md --toc
+
+# German
+md2pdf document.md --toc --toc-title "Inhaltsverzeichnis"
+
+# French
+md2pdf document.md --toc --toc-title "Table des matières"
+
+# Spanish
+md2pdf document.md --toc --toc-title "Índice"
+
+# Italian
+md2pdf document.md --toc --toc-title "Indice"
+
+# Portuguese
+md2pdf document.md --toc --toc-title "Índice"
+
+# Japanese
+md2pdf document.md --toc --toc-title "目次"
+
+# Chinese (Simplified)
+md2pdf document.md --toc --toc-title "目录"
+
+# Korean
+md2pdf document.md --toc --toc-title "목차"
+
+# Russian
+md2pdf document.md --toc --toc-title "Содержание"
+
+# Arabic
+md2pdf document.md --toc --toc-title "جدول المحتويات"
+```
 
 ## Two-Step Workflow
 

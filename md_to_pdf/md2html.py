@@ -130,35 +130,169 @@ def restore_protected_blocks(html, code_blocks, mermaid_blocks):
     return html
 
 def convert_all_headings(html, headings_dict, process_heading_func):
-    """Process all heading levels in order (h4 to h1)"""
-    for level in range(4, 0, -1):
-        pattern = r'^' + '#' * level + r' (.*?)$'
-        html = re.sub(pattern, lambda m: process_heading_func(m, level),
-                     html, flags=re.MULTILINE)
+    """Process all heading levels in document order"""
+    # Process all headings in a single pass to maintain document order
+    def process_any_heading(match):
+        # Count the number of # characters to determine level
+        heading_marks = match.group(1)
+        level = len(heading_marks)
+        text = match.group(2)
+        # Create a match object-like structure for process_heading_func
+        class HeadingMatch:
+            def group(self, n):
+                return text if n == 1 else None
+        return process_heading_func(HeadingMatch(), level)
+    
+    pattern = r'^(#{1,6}) (.+?)$'
+    html = re.sub(pattern, process_any_heading, html, flags=re.MULTILINE)
     return html
 
-def convert(md_file):
-    """Convert markdown to HTML with proper link handling"""
+def generate_toc(headings, max_depth=3, title="Table of Contents", skip_first_h1=True):
+    """
+    Generate HTML table of contents
+    
+    Args:
+        headings: List of (slug, level, text) tuples
+        max_depth: Maximum heading level (1-6)
+        title: TOC section title (will be HTML-escaped for security)
+        skip_first_h1: Skip first H1 heading (document title)
+    
+    Returns:
+        HTML string for TOC
+    
+    Security:
+        The title parameter is HTML-escaped to prevent XSS injection attacks.
+        Empty or whitespace-only titles fall back to the default.
+    """
+    import html
+    
+    if not headings:
+        return ""
+    
+    # Validate and sanitize title
+    sanitized_title = title.strip() if title else ""
+    if not sanitized_title:
+        sanitized_title = "Table of Contents"
+    # HTML-escape the title to prevent XSS
+    escaped_title = html.escape(sanitized_title)
+    
+    # Filter headings
+    filtered = []
+    first_h1_seen = False
+    for slug, level, text in headings:
+        if level > max_depth:
+            continue
+        if skip_first_h1 and level == 1 and not first_h1_seen:
+            first_h1_seen = True
+            continue
+        filtered.append((slug, level, text))
+    
+    if not filtered:
+        return ""
+    
+    # Build TOC HTML with proper nesting
+    toc_html = '<div class="table-of-contents">\n'
+    toc_html += f'<h2 class="toc-title">{escaped_title}</h2>\n'
+    toc_html += '<nav class="toc-nav">\n<ul class="toc-list">\n'
+    
+    prev_level = filtered[0][1] if filtered else 0  # Start with first item's level
+    first_item = True
+    
+    for slug, level, text in filtered:
+        if first_item:
+            # First item - just open it
+            toc_html += f'<li class="toc-item toc-level-{level}">'
+            toc_html += f'<a href="#{slug}" class="toc-link">{text}</a>'
+            first_item = False
+        elif level > prev_level:
+            # Going deeper - open nested list
+            toc_html += '\n<ul class="toc-list">\n'
+            toc_html += f'<li class="toc-item toc-level-{level}">'
+            toc_html += f'<a href="#{slug}" class="toc-link">{text}</a>'
+        elif level < prev_level:
+            # Going shallower - close nested lists and previous items
+            for _ in range(prev_level - level):
+                toc_html += '</li>\n</ul>\n'
+            toc_html += '</li>\n'  # Close the item at this level
+            toc_html += f'<li class="toc-item toc-level-{level}">'
+            toc_html += f'<a href="#{slug}" class="toc-link">{text}</a>'
+        else:
+            # Same level - close previous item and open new one
+            toc_html += '</li>\n'
+            toc_html += f'<li class="toc-item toc-level-{level}">'
+            toc_html += f'<a href="#{slug}" class="toc-link">{text}</a>'
+        
+        prev_level = level
+    
+    # Close remaining open tags
+    if filtered:
+        toc_html += '</li>\n'  # Close last item
+        # Close any remaining nested lists
+        for _ in range(prev_level - filtered[0][1]):
+            toc_html += '</ul>\n</li>\n'
+    
+    toc_html += '</ul>\n</nav>\n</div>\n'
+    return toc_html
+
+def insert_toc(html, toc_html, position='after_title'):
+    """
+    Insert TOC at specified position
+    
+    Args:
+        html: HTML content
+        toc_html: Generated TOC HTML
+        position: 'top', 'after_title' (default), or 'custom'
+    
+    Returns:
+        HTML with TOC inserted
+    """
+    if position == 'after_title':
+        # Insert after first h1
+        match = re.search(r'(<h1[^>]*>.*?</h1>)', html, re.DOTALL)
+        if match:
+            pos = match.end()
+            return html[:pos] + '\n' + toc_html + '\n' + html[pos:]
+        # Fallback to top if no h1
+        return toc_html + '\n' + html
+    
+    elif position == 'top':
+        return toc_html + '\n' + html
+    
+    elif position == 'custom':
+        # Replace {{TOC}} marker
+        if '{{TOC}}' in html:
+            return html.replace('{{TOC}}', toc_html)
+        # Fallback to top if no marker
+        return toc_html + '\n' + html
+    
+    return toc_html + '\n' + html
+
+def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of Contents",
+            toc_position='after_title', toc_include_first=False):
+    """Convert markdown to HTML with optional TOC"""
     with open(md_file, 'r') as f:
         content = f.read()
 
     html = content
 
-    # Track all headings for anchor generation
-    headings = {}
+    # Track all headings for anchor generation - changed to list of tuples
+    headings = []
 
     # Define heading processor closure
     def process_heading(match, level):
         text = match.group(1)
         slug = slugify(text)
+        
         # Handle duplicate slugs
-        if slug in headings:
+        existing_slugs = [h[0] for h in headings]
+        if slug in existing_slugs:
             counter = 1
             original_slug = slug
-            while f"{original_slug}-{counter}" in headings:
+            while f"{original_slug}-{counter}" in existing_slugs:
                 counter += 1
             slug = f"{original_slug}-{counter}"
-        headings[slug] = text
+        
+        headings.append((slug, level, text))
         return f'<h{level} id="{slug}">{text}</h{level}>'
 
     # Phase 1: Protect special blocks
@@ -176,11 +310,11 @@ def convert(md_file):
                  html)
 
     # Convert anchor links in table of contents
-    for slug, title in headings.items():
+    for slug, level, heading_text in headings:
         # Replace [Title](#anchor) with proper link
-        html = html.replace(f'[{title}](#{slug})', f'<a href="#{slug}">{title}</a>')
+        html = html.replace(f'[{heading_text}](#{slug})', f'<a href="#{slug}">{heading_text}</a>')
         # Also handle variations with different anchor formats
-        html = html.replace(f'](#{slug})', f'<a href="#{slug}">{title}</a>')
+        html = html.replace(f'](#{slug})', f'<a href="#{slug}">{heading_text}</a>')
 
     # Convert tables
     def convert_table(match):
@@ -228,6 +362,11 @@ def convert(md_file):
     # Phase 5: Restore protected blocks and wrap paragraphs
     html = restore_protected_blocks(html, code_blocks, mermaid_blocks)
     html = convert_paragraphs(html)
+    
+    # Generate and insert TOC if requested
+    if generate_toc_flag and headings:
+        toc_html = generate_toc(headings, toc_depth, toc_title, not toc_include_first)
+        html = insert_toc(html, toc_html, toc_position)
     
     return html
 
@@ -606,6 +745,91 @@ img {{
     border-radius: 5px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     page-break-inside: avoid;
+
+/* Table of Contents Styling */
+.table-of-contents {{
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 20px;
+    margin: 30px 0;
+    page-break-inside: avoid;
+}}
+
+.toc-title {{
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.5em;
+    color: #2c3e50;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}}
+
+.toc-nav {{
+    font-size: 0.95em;
+}}
+
+.toc-list {{
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}}
+
+.toc-list .toc-list {{
+    padding-left: 20px;
+    margin-top: 5px;
+}}
+
+.toc-item {{
+    margin: 8px 0;
+    line-height: 1.6;
+}}
+
+.toc-link {{
+    color: #3498db;
+    text-decoration: none;
+    display: block;
+    padding: 4px 0;
+    transition: color 0.2s;
+}}
+
+.toc-link:hover {{
+    color: #2980b9;
+    text-decoration: underline;
+}}
+
+.toc-level-1 > .toc-link {{
+    font-weight: 600;
+    font-size: 1.05em;
+}}
+
+.toc-level-2 > .toc-link {{
+    font-weight: 500;
+}}
+
+.toc-level-3 > .toc-link {{
+    font-weight: normal;
+    color: #555;
+}}
+
+.toc-level-4 > .toc-link,
+.toc-level-5 > .toc-link,
+.toc-level-6 > .toc-link {{
+    font-weight: normal;
+    color: #666;
+    font-size: 0.95em;
+}}
+
+@media print {{
+    .table-of-contents {{
+        background: white;
+        border: 1px solid #ccc;
+    }}
+    
+    .toc-link {{
+        color: #0066cc !important;
+    }}
+}}
 }}
 </style>
 </head>
@@ -614,15 +838,22 @@ img {{
 </body>
 </html>'''
 
-def convert_file(md_file, html_file=None, orientation='portrait', font_preset='ibm'):
+def convert_file(md_file, html_file=None, orientation='portrait', font_preset='ibm',
+                 generate_toc=False, toc_depth=3, toc_title="Table of Contents",
+                 toc_position='after_title', toc_include_first=False):
     """
-    Convert markdown file to HTML file
+    Convert markdown file to HTML file with optional TOC
     
     Args:
         md_file: Path to markdown file
         html_file: Optional output HTML file path
         orientation: Page orientation ('portrait' or 'landscape'), default 'portrait'
         font_preset: Font preset to use ('ibm', 'system', 'classic', 'modern'), default 'ibm'
+        generate_toc: Generate table of contents
+        toc_depth: Maximum heading level for TOC (1-6)
+        toc_title: Title for the table of contents
+        toc_position: TOC position ('top', 'after_title', 'custom')
+        toc_include_first: Include first H1 heading in TOC
     """
     md_path = Path(md_file)
     
@@ -631,8 +862,9 @@ def convert_file(md_file, html_file=None, orientation='portrait', font_preset='i
     else:
         html_file = Path(html_file)
     
-    # Convert markdown to HTML
-    html_content = convert(md_path)
+    # Convert markdown to HTML with TOC options
+    html_content = convert(md_path, generate_toc, toc_depth, toc_title,
+                          toc_position, toc_include_first)
     
     # Create full HTML document with orientation and font preset
     html_doc = create_html_document(md_path.stem, html_content, orientation, font_preset)

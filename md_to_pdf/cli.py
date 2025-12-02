@@ -21,7 +21,12 @@ def convert_md_to_pdf(
     pdf_file: Optional[str] = None,
     keep_html: bool = False,
     orientation: Literal['portrait', 'landscape'] = 'portrait',
-    font_preset: str = 'ibm'
+    font_preset: str = 'ibm',
+    generate_toc: bool = False,
+    toc_depth: int = 3,
+    toc_title: str = "Table of Contents",
+    toc_position: str = 'after_title',
+    toc_include_first: bool = False
 ) -> Path:
     """
     Convert a Markdown file to PDF with clickable links and Mermaid diagrams
@@ -34,6 +39,11 @@ def convert_md_to_pdf(
                      'landscape'. Defaults to 'portrait' for backward compatibility.
         font_preset: Font preset to use ('ibm', 'system', 'classic', 'modern').
                      Defaults to 'ibm'.
+        generate_toc: Generate table of contents
+        toc_depth: Maximum heading level for TOC (1-6)
+        toc_title: Title for the table of contents
+        toc_position: TOC position ('top', 'after_title', 'custom')
+        toc_include_first: Include first H1 heading in TOC
         
     Returns:
         Path to the generated PDF file
@@ -50,17 +60,22 @@ def convert_md_to_pdf(
     if not md_file.endswith('.md'):
         raise ValueError(f"Input must be a Markdown (.md) file")
     
-    # Generate HTML file path
-    html_file = md_path.with_suffix('.html')
-    
     # Generate PDF file path if not specified
     pdf_path = md_path.with_suffix('.pdf') if pdf_file is None else Path(pdf_file)
+    
+    # Generate HTML file path in the same directory as the PDF
+    html_file = pdf_path.with_suffix('.html')
     
     print(f"📄 Converting {md_path.name} to PDF...")
     
     # Step 1: Convert Markdown to HTML
-    print(f"   ⟶ Converting Markdown to HTML...")
-    html_path = md_to_html(md_path, html_file, orientation=orientation, font_preset=font_preset)
+    if generate_toc:
+        print(f"   ⟶ Converting Markdown to HTML with TOC...")
+    else:
+        print(f"   ⟶ Converting Markdown to HTML...")
+    html_path = md_to_html(md_path, html_file, orientation=orientation, font_preset=font_preset,
+                           generate_toc=generate_toc, toc_depth=toc_depth, toc_title=toc_title,
+                           toc_position=toc_position, toc_include_first=toc_include_first)
     
     # Step 2: Convert HTML to PDF
     print(f"   ⟶ Converting HTML to PDF with clickable links...")
@@ -137,6 +152,40 @@ Examples:
     )
     
     parser.add_argument(
+        "--toc",
+        action="store_true",
+        help="Generate table of contents"
+    )
+    
+    parser.add_argument(
+        "--toc-depth",
+        type=int,
+        default=3,
+        choices=range(1, 7),
+        metavar="DEPTH",
+        help="Maximum heading level for TOC (1-6, default: 3)"
+    )
+    
+    parser.add_argument(
+        "--toc-title",
+        default="Table of Contents",
+        help="Title for the table of contents (default: 'Table of Contents')"
+    )
+    
+    parser.add_argument(
+        "--toc-position",
+        choices=['top', 'after_title', 'custom'],
+        default='after_title',
+        help="TOC position: 'top' (before title), 'after_title' (default, after first H1), or 'custom' (use {{TOC}} marker in markdown)"
+    )
+    
+    parser.add_argument(
+        "--toc-include-first",
+        action="store_true",
+        help="Include first H1 heading in TOC (default: exclude as document title)"
+    )
+    
+    parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}"
@@ -153,7 +202,12 @@ Examples:
             args.output,
             args.keep_html,
             orientation,
-            args.font_preset
+            args.font_preset,
+            args.toc,
+            args.toc_depth,
+            args.toc_title,
+            args.toc_position,
+            args.toc_include_first
         )
     except Exception as e:
         print(f"❌ Error: {e}", file=sys.stderr)

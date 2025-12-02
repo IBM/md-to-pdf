@@ -14,3 +14,4 @@ build/
 IMPLEMENTATION_PLAN_*.md
 ENHANCEMENT*.md
 PHASE*_SUMMARY.md
+test_*

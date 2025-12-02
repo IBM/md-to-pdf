@@ -67,7 +67,12 @@ def _submit_conversion_tasks(
     output_path: Optional[Path],
     keep_html: bool,
     orientation: Literal['portrait', 'landscape'],
-    font_preset: str
+    font_preset: str,
+    generate_toc: bool,
+    toc_depth: int,
+    toc_title: str,
+    toc_position: str,
+    toc_include_first: bool
 ) -> dict:
     """
     Submit conversion tasks to the executor
@@ -79,6 +84,11 @@ def _submit_conversion_tasks(
         keep_html: Whether to keep intermediate HTML files
         orientation: Page orientation
         font_preset: Font preset to use
+        generate_toc: Whether to generate table of contents
+        toc_depth: Maximum heading level for TOC (1-6)
+        toc_title: Title for the table of contents
+        toc_position: TOC position ('top', 'after_title', 'custom')
+        toc_include_first: Include first H1 heading in TOC
         
     Returns:
         Dictionary mapping futures to (md_file, pdf_file) tuples
@@ -93,7 +103,12 @@ def _submit_conversion_tasks(
             str(pdf_file),
             keep_html,
             orientation,
-            font_preset
+            font_preset,
+            generate_toc,
+            toc_depth,
+            toc_title,
+            toc_position,
+            toc_include_first
         )
         future_to_file[future] = (md_file, pdf_file)
     
@@ -130,7 +145,12 @@ def batch_convert(
     keep_html: bool = False,
     orientation: Literal['portrait', 'landscape'] = 'portrait',
     font_preset: str = 'ibm',
-    max_workers: int = DEFAULT_MAX_WORKERS
+    max_workers: int = DEFAULT_MAX_WORKERS,
+    generate_toc: bool = False,
+    toc_depth: int = 3,
+    toc_title: str = "Table of Contents",
+    toc_position: str = 'after_title',
+    toc_include_first: bool = False
 ) -> List[Path]:
     """
     Convert multiple Markdown files to PDF
@@ -143,6 +163,11 @@ def batch_convert(
         orientation: Page orientation ('portrait' or 'landscape'), default 'portrait'
         font_preset: Font preset to use ('ibm', 'system', 'classic', 'modern'), default 'ibm'
         max_workers: Maximum number of parallel conversions (must be >= 1)
+        generate_toc: Whether to generate table of contents
+        toc_depth: Maximum heading level for TOC (1-6), default 3
+        toc_title: Title for the table of contents, default "Table of Contents"
+        toc_position: TOC position ('top', 'after_title', 'custom'), default 'after_title'
+        toc_include_first: Include first H1 heading in TOC, default False
         
     Returns:
         List of generated PDF files
@@ -181,7 +206,12 @@ def batch_convert(
             output_path,
             keep_html,
             orientation,
-            font_preset
+            font_preset,
+            generate_toc,
+            toc_depth,
+            toc_title,
+            toc_position,
+            toc_include_first
         )
         
         # Process results as they complete
@@ -273,6 +303,40 @@ Examples:
     )
     
     parser.add_argument(
+        '--toc',
+        action='store_true',
+        help='Generate table of contents for all files'
+    )
+    
+    parser.add_argument(
+        '--toc-depth',
+        type=int,
+        default=3,
+        choices=range(1, 7),
+        metavar='DEPTH',
+        help='Maximum heading level for TOC (1-6, default: 3)'
+    )
+    
+    parser.add_argument(
+        '--toc-title',
+        default='Table of Contents',
+        help='Title for the table of contents'
+    )
+    
+    parser.add_argument(
+        '--toc-position',
+        choices=['top', 'after_title', 'custom'],
+        default='after_title',
+        help='TOC position: top, after_title (default), or custom'
+    )
+    
+    parser.add_argument(
+        '--toc-include-first',
+        action='store_true',
+        help='Include first H1 heading in TOC'
+    )
+    
+    parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}"
@@ -296,7 +360,12 @@ def main():
             args.keep_html,
             orientation,
             args.font_preset,
-            args.jobs
+            args.jobs,
+            args.toc,
+            args.toc_depth,
+            args.toc_title,
+            args.toc_position,
+            args.toc_include_first
         )
     except ValueError as e:
         # Handle validation errors (e.g., invalid max_workers)
