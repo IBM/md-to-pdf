@@ -5,6 +5,6 @@ Professional Markdown to PDF converter with support for Mermaid diagrams,
 clickable links, page orientation control, and beautiful formatting.
 """
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 
 # Made with Bob
