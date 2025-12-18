@@ -14,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from md_to_pdf import __version__
 from md_to_pdf.cli import convert_md_to_pdf
+from md_to_pdf.image_validator import validate_images_batch
 
 # Default maximum number of parallel conversions
 DEFAULT_MAX_WORKERS = 4
@@ -72,7 +73,8 @@ def _submit_conversion_tasks(
     toc_depth: int,
     toc_title: str,
     toc_position: str,
-    toc_include_first: bool
+    toc_include_first: bool,
+    strict_images: bool
 ) -> dict:
     """
     Submit conversion tasks to the executor
@@ -89,6 +91,7 @@ def _submit_conversion_tasks(
         toc_title: Title for the table of contents
         toc_position: TOC position ('top', 'after_title', 'custom')
         toc_include_first: Include first H1 heading in TOC
+        strict_images: If True, abort on missing images
         
     Returns:
         Dictionary mapping futures to (md_file, pdf_file) tuples
@@ -108,7 +111,8 @@ def _submit_conversion_tasks(
             toc_depth,
             toc_title,
             toc_position,
-            toc_include_first
+            toc_include_first,
+            strict_images
         )
         future_to_file[future] = (md_file, pdf_file)
     
@@ -150,7 +154,8 @@ def batch_convert(
     toc_depth: int = 3,
     toc_title: str = "Table of Contents",
     toc_position: str = 'after_title',
-    toc_include_first: bool = False
+    toc_include_first: bool = False,
+    strict_images: bool = False
 ) -> List[Path]:
     """
     Convert multiple Markdown files to PDF
@@ -168,12 +173,14 @@ def batch_convert(
         toc_title: Title for the table of contents, default "Table of Contents"
         toc_position: TOC position ('top', 'after_title', 'custom'), default 'after_title'
         toc_include_first: Include first H1 heading in TOC, default False
+        strict_images: If True, abort on missing images. If False, issue warnings.
         
     Returns:
         List of generated PDF files
         
     Raises:
         ValueError: If max_workers is less than 1
+        SystemExit: If strict_images is True and images are missing
     """
     # Validate max_workers parameter
     if max_workers < 1:
@@ -189,6 +196,11 @@ def batch_convert(
         return []
     
     print(f"🔍 Found {len(md_files)} Markdown files to convert")
+    
+    # Validate images in all files before processing
+    if not validate_images_batch(md_files, strict_mode=strict_images):
+        # In strict mode, validation failed
+        sys.exit(1)
     
     # Create output directory if specified
     output_path = None
@@ -211,7 +223,8 @@ def batch_convert(
             toc_depth,
             toc_title,
             toc_position,
-            toc_include_first
+            toc_include_first,
+            strict_images
         )
         
         # Process results as they complete
@@ -337,6 +350,12 @@ Examples:
     )
     
     parser.add_argument(
+        '--strict-images',
+        action='store_true',
+        help='Abort PDF generation if any referenced images are missing (default: show warnings and continue)'
+    )
+    
+    parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}"
@@ -365,7 +384,8 @@ def main():
             args.toc_depth,
             args.toc_title,
             args.toc_position,
-            args.toc_include_first
+            args.toc_include_first,
+            args.strict_images
         )
     except ValueError as e:
         # Handle validation errors (e.g., invalid max_workers)

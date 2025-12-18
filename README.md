@@ -5,6 +5,7 @@ Professional Markdown to PDF converter with support for Mermaid diagrams, clicka
 ## Features
 
 - ✅ Convert Markdown to PDF with professional formatting
+- ✅ **Image validation** with warning and strict modes
 - ✅ **Auto-generated table of contents** with customizable depth, title, and positioning
 - ✅ **Custom font presets** (IBM Plex, system fonts, Georgia, Roboto)
 - ✅ **Page orientation control** (portrait/landscape for A4 pages)
@@ -34,6 +35,9 @@ md2pdf document.md -l
 
 # Combine features
 md2pdf document.md --toc --font-preset modern -l
+
+# Validate images (strict mode - abort on missing images)
+md2pdf document.md --strict-images
 
 # Batch convert with TOC and custom fonts
 md2pdf-batch docs/ --toc --font-preset classic -o output/
@@ -79,6 +83,9 @@ md2pdf document.md -l
 # Combine options
 md2pdf document.md --font-preset modern -l -o output.pdf
 
+# Validate images strictly (abort on missing images)
+md2pdf document.md --strict-images
+
 # Keep HTML file
 md2pdf document.md --keep-html
 ```
@@ -96,6 +103,9 @@ md2pdf-batch docs/ --font-preset classic
 
 # Recursive with landscape
 md2pdf-batch docs/ -r -l
+
+# Strict image validation
+md2pdf-batch docs/ --strict-images
 
 # Combine options
 md2pdf-batch docs/ --font-preset modern -r -o output/
@@ -315,6 +325,108 @@ md2pdf document.md --toc --toc-title "Содержание"
 # Arabic
 md2pdf document.md --toc --toc-title "جدول المحتويات"
 ```
+
+## Image Validation
+
+Validate image references in markdown files before PDF generation to catch missing images early.
+
+### Validation Modes
+
+#### Warning Mode (Default)
+- Scans markdown for image references
+- Issues warnings to stderr for missing images
+- Continues with PDF generation
+- Useful for development and iterative work
+
+```bash
+# Default behavior - shows warnings but continues
+md2pdf document.md
+```
+
+**Example output:**
+```
+Warning: Image not found: ./images/diagram.png (referenced in document.md:15)
+Warning: Image not found: ../assets/logo.jpg (referenced in document.md:42)
+Successfully generated: document.pdf
+```
+
+#### Strict Mode
+- Performs the same validation as warning mode
+- Aborts PDF generation if any images are missing
+- Exits with non-zero status code
+- Ideal for CI/CD pipelines and production builds
+
+```bash
+# Strict mode - aborts on missing images
+md2pdf document.md --strict-images
+```
+
+**Example output:**
+```
+Error: Image not found: ./images/diagram.png (referenced in document.md:15)
+Error: Image not found: ../assets/logo.jpg (referenced in document.md:42)
+
+Error: Image validation failed
+  - Total images checked: 5
+  - Missing images: 2
+  - Files affected: 1
+PDF generation aborted due to missing images
+```
+
+### Batch Processing with Validation
+
+Image validation works seamlessly with batch processing:
+
+```bash
+# Warning mode (default) - processes all files, shows warnings
+md2pdf-batch docs/ -r
+
+# Strict mode - validates all files before processing
+md2pdf-batch docs/ -r --strict-images
+```
+
+In batch mode with strict validation:
+- All files are validated before any PDF generation starts
+- If any images are missing, the entire batch is aborted
+- Provides a complete list of all missing images across all files
+
+### Supported Image Formats
+
+The validator checks for:
+- **Inline images**: `![alt text](path/to/image.png)`
+- **Reference-style images**: `![alt text][ref]` with `[ref]: path/to/image.png`
+- **Relative paths**: `./images/`, `../assets/`
+- **Absolute paths**: `/full/path/to/image.png`
+
+**Note:** URL references (http/https) are skipped and not validated.
+
+### Use Cases
+
+#### Development Workflow
+Use warning mode during development to see issues without blocking:
+```bash
+md2pdf document.md
+```
+
+#### CI/CD Pipeline
+Use strict mode in automated builds to ensure quality:
+```bash
+md2pdf document.md --strict-images || exit 1
+```
+
+#### Pre-Release Validation
+Validate all documentation before release:
+```bash
+md2pdf-batch docs/ -r --strict-images
+```
+
+### Benefits
+
+1. **Early Detection** - Find missing images before PDF generation
+2. **Quality Assurance** - Prevent distribution of PDFs with broken images
+3. **Batch Efficiency** - Validate all files before processing
+4. **CI/CD Integration** - Strict mode enables automated validation
+5. **Clear Feedback** - Detailed error messages with file names and line numbers
 
 ## Two-Step Workflow
 

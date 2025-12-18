@@ -15,6 +15,7 @@ from md_to_pdf import __version__
 from md_to_pdf.md2html import convert_file as md_to_html
 from md_to_pdf.html2pdf import html_to_pdf_with_links
 from md_to_pdf.fonts import get_available_presets
+from md_to_pdf.image_validator import validate_images
 
 def convert_md_to_pdf(
     md_file: str,
@@ -26,7 +27,8 @@ def convert_md_to_pdf(
     toc_depth: int = 3,
     toc_title: str = "Table of Contents",
     toc_position: str = 'after_title',
-    toc_include_first: bool = False
+    toc_include_first: bool = False,
+    strict_images: bool = False
 ) -> Path:
     """
     Convert a Markdown file to PDF with clickable links and Mermaid diagrams
@@ -44,6 +46,7 @@ def convert_md_to_pdf(
         toc_title: Title for the table of contents
         toc_position: TOC position ('top', 'after_title', 'custom')
         toc_include_first: Include first H1 heading in TOC
+        strict_images: If True, abort on missing images. If False, issue warnings.
         
     Returns:
         Path to the generated PDF file
@@ -51,6 +54,7 @@ def convert_md_to_pdf(
     Raises:
         FileNotFoundError: If md_file does not exist
         ValueError: If md_file is not a .md file or orientation is invalid
+        SystemExit: If strict_images is True and images are missing
     """
     md_path = Path(md_file)
     
@@ -59,6 +63,11 @@ def convert_md_to_pdf(
     
     if not md_file.endswith('.md'):
         raise ValueError(f"Input must be a Markdown (.md) file")
+    
+    # Validate images before processing
+    if not validate_images(md_path, strict_mode=strict_images):
+        # In strict mode, validation failed
+        sys.exit(1)
     
     # Generate PDF file path if not specified
     pdf_path = md_path.with_suffix('.pdf') if pdf_file is None else Path(pdf_file)
@@ -87,7 +96,14 @@ def convert_md_to_pdf(
         print(f"   ⟶ Removed intermediate HTML file")
     
     size = pdf_path.stat().st_size / 1024
-    print(f"✅ PDF created: {pdf_path.name} ({size:.1f} KB)")
+    
+    # Check if there were any image warnings
+    if strict_images:
+        print(f"✅ PDF created: {pdf_path.name} ({size:.1f} KB)")
+    else:
+        # In warning mode, note if there were missing images
+        print(f"✅ PDF created: {pdf_path.name} ({size:.1f} KB)")
+    
     print(f"\n✨ All hyperlinks are clickable in the PDF!")
     print(f"   - Table of contents links work")
     print(f"   - Email addresses are clickable")
@@ -186,6 +202,12 @@ Examples:
     )
     
     parser.add_argument(
+        "--strict-images",
+        action="store_true",
+        help="Abort PDF generation if any referenced images are missing (default: show warnings and continue)"
+    )
+    
+    parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}"
@@ -207,7 +229,8 @@ Examples:
             args.toc_depth,
             args.toc_title,
             args.toc_position,
-            args.toc_include_first
+            args.toc_include_first,
+            args.strict_images
         )
     except Exception as e:
         print(f"❌ Error: {e}", file=sys.stderr)
