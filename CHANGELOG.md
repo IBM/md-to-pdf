@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-01-27
+
+### Added
+- **Image validation** with warning and strict modes
+  - New [`ImageValidator`](md_to_pdf/image_validator.py:44) class for comprehensive image reference validation
+  - Added `--strict-images` flag to `md2pdf` and `md2pdf-batch` commands
+  - **Warning mode (default)**: Scans markdown for image references and issues warnings to stderr for missing images while continuing PDF generation
+  - **Strict mode**: Aborts PDF generation if any referenced images are missing, exits with non-zero status code
+  - Support for both inline (`![alt](path)`) and reference-style (`![alt][ref]`) markdown images
+  - Automatic URL detection and skipping (http/https images not validated)
+  - Validation caching for performance optimization
+  - Detailed error reporting with file names and line numbers
+- **Batch processing support** for image validation
+  - Full integration in both single-file and batch processing modes
+  - Consolidated validation results across multiple files
+  - Per-file and aggregate error reporting
+
+### Changed
+- Updated [`convert_md_to_pdf()`](md_to_pdf/cli.py:19) to accept `strict_images` parameter
+- Updated [`batch_convert()`](md_to_pdf/batch.py:126) to support image validation in batch operations
+- Enhanced CLI with `--strict-images` argument for both single and batch commands
+
+### Technical Details
+- New file: [`md_to_pdf/image_validator.py`](md_to_pdf/image_validator.py:1) - Image validation module (363 lines)
+- Modified files: [`cli.py`](md_to_pdf/cli.py:1), [`batch.py`](md_to_pdf/batch.py:1), [`README.md`](README.md:1)
+- Uses dataclasses for clean result handling (`ImageReference`, `ValidationResult`)
+- Regex-based image extraction with proper path resolution
+- Filesystem caching to avoid repeated validation checks
+- Maintained backward compatibility - validation is non-breaking in warning mode
+
+### Documentation
+- Added comprehensive "Image Validation" section to README.md (100+ lines)
+- Usage examples for both warning and strict modes
+- CI/CD pipeline integration guidance
+- Batch processing examples with validation
+- Detailed output examples for both modes
+
+### Use Cases
+- **Development workflow**: Warning mode helps identify broken image references during iterative work
+- **CI/CD pipelines**: Strict mode ensures production builds have all required images before deployment
+- **Batch processing**: Validates all files before starting PDF generation to catch issues early
+- **Quality assurance**: Prevents broken image references in final PDFs
+
 ## [1.4.0] - 2025-12-15
 
 ### Added
@@ -252,6 +295,38 @@ Major cleanup by removing deprecated scripts and files, consolidating the codeba
 ---
 
 ## Migration Guide
+
+### Upgrading to 1.5.0
+
+Version 1.5.0 introduces image validation to catch missing image references before PDF generation. The feature is fully backward compatible and non-breaking.
+
+**What's new:**
+- Image validation with warning mode (default) and strict mode
+- `--strict-images` flag for CI/CD pipelines
+- Support for inline and reference-style markdown images
+- Detailed error reporting with file and line numbers
+
+**Usage:**
+```bash
+# Default behavior - shows warnings but continues
+md2pdf document.md
+
+# Strict mode - aborts on missing images (ideal for CI/CD)
+md2pdf document.md --strict-images
+
+# Batch processing with strict validation
+md2pdf-batch docs/ --strict-images -o output/
+```
+
+**Benefits:**
+- Catch broken image references early in development
+- Prevent PDFs with missing images in production
+- Detailed error messages with exact file locations
+- Performance-optimized with validation caching
+- No breaking changes - warning mode is default
+
+**Migration:**
+No changes required. Existing scripts continue to work as before. The new validation runs automatically in warning mode, providing helpful feedback without breaking your workflow.
 
 ### Upgrading to 1.4.0
 
