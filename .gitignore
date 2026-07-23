@@ -10,7 +10,8 @@ __pycache__/
 build/
 #dist/
 *.egg-info/
-.bob/
+.bob/*
+!.bob/skills/
 IMPLEMENTATION_PLAN_*.md
 ENHANCEMENT*.md
 PHASE*_SUMMARY.md
