@@ -49,13 +49,13 @@ md2pdf-batch docs/ --toc --font-preset classic -o output/
 Download the latest wheel from the [GitHub Releases page](https://github.ibm.com/technology-garage-dach/md-to-pdf/releases/latest) and install it:
 
 ```bash
-pip install md_to_pdf-1.6.0-py3-none-any.whl
+pip install md_to_pdf-1.6.1-py3-none-any.whl
 ```
 
 To upgrade an existing installation:
 
 ```bash
-pip install md_to_pdf-1.6.0-py3-none-any.whl --force-reinstall
+pip install md_to_pdf-1.6.1-py3-none-any.whl --force-reinstall
 ```
 
 Chromium is installed automatically on first run — no extra setup needed.
@@ -454,7 +454,9 @@ md2pdf document.md --keep-html
 
 ## Troubleshooting
 
-### Playwright Error
+### Playwright / Chromium Error
+
+Chromium is installed automatically on first run. If you still see errors, install it manually:
 
 ```bash
 playwright install chromium
@@ -500,8 +502,8 @@ All commands preserve links by default. If links aren't working, ensure you're u
 
 MIT
 
-Based on [md-to-pdf](https://github.com/crarau/md-to-pdf). Enhanced using [IBM Bob](https://www.ibm.com/products/bob).
+Based on [md-to-pdf](https://github.com/crarau/md-to-pdf). Enhanced using [IBM Bob](https://bob.ibm.com/).
 
 ## Contributing
 
-Submit issues and enhancement requests via GitHub.
+Submit issues and enhancement requests via [GitHub](https://github.ibm.com/technology-garage-dach/md-to-pdf/issues).
