@@ -68,6 +68,11 @@ graph TD
       D---Controller:::black-->T["CIMC_RULE('archaptcha,recaptcha,bibot');"]:::black;
 ```
 
+## Blockquote
+
+> This is a blockquote. Use it to highlight important notes, citations, or remarks.
+> It can span multiple lines and will be styled with a left border.
+
 ## Table
 
 | Name | Description |

@@ -25,6 +25,30 @@ def extract_and_protect_blocks(html, pattern, block_list, block_type):
         return f'__{block_type.upper()}_BLOCK_{len(block_list)-1}__'
     return re.sub(pattern, save_block, html, flags=re.DOTALL)
 
+def convert_blockquotes(html):
+    """Convert markdown blockquotes to HTML <blockquote> elements"""
+    lines = html.split('\n')
+    result = []
+    in_blockquote = False
+
+    for line in lines:
+        if line.startswith('> ') or line == '>':
+            content = line[2:] if line.startswith('> ') else ''
+            if not in_blockquote:
+                result.append('<blockquote>')
+                in_blockquote = True
+            result.append(content)
+        else:
+            if in_blockquote:
+                result.append('</blockquote>')
+                in_blockquote = False
+            result.append(line)
+
+    if in_blockquote:
+        result.append('</blockquote>')
+
+    return '\n'.join(result)
+
 def convert_lists(html):
     """Convert markdown lists to HTML with proper nesting"""
     lines = html.split('\n')
@@ -357,6 +381,7 @@ def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of C
     html = re.sub(r'^---$', r'<hr>', html, flags=re.MULTILINE)
 
     # Phase 4: Convert block elements
+    html = convert_blockquotes(html)
     html = convert_lists(html)
 
     # Phase 5: Restore protected blocks and wrap paragraphs
@@ -727,6 +752,20 @@ pre {{
 pre code {{
     background: none;
     padding: 0;
+}}
+
+blockquote {{
+    border-left: 4px solid #3498db;
+    margin: 16px 0;
+    padding: 8px 16px;
+    color: #555;
+    background: #f8f9fa;
+    border-radius: 0 4px 4px 0;
+    page-break-inside: avoid;
+}}
+
+blockquote p {{
+    margin: 4px 0;
 }}
 
 hr {{
