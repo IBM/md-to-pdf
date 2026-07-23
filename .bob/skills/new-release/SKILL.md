@@ -82,25 +82,32 @@ Commit:    "Release 1.6.0"
 
 Ask: *"Alles klar — soll ich pushen und das GitHub Release erstellen?"*
 
-## Step 7 — Commit, tag, push & release
+## Step 7 — Commit, tag, push & GitHub Release
 
-Only after explicit confirmation:
-
-```bash
-git add setup.py md_to_pdf/__init__.py CHANGELOG.md
-git commit -m "Release <VERSION>"
-git tag <VERSION>
-git push && git push origin <VERSION>
-```
-
-Then create the GitHub release. Build the `--notes` string from the CHANGELOG entry (same format
-as existing releases: `# Release X.Y.Z`, `**Release Date:**`, `## Overview`, `## Installation`):
+Only after explicit confirmation, run these commands **in order**:
 
 ```bash
-gh release create <VERSION> \
-  --title "Release <VERSION>" \
-  --notes "<notes>" \
-  dist/md_to_pdf-<VERSION>-py3-none-any.whl
+# 1. Stage all release artefacts — including the wheel
+git add setup.py md_to_pdf/__init__.py CHANGELOG.md dist/md_to_pdf-<VERSION>-py3-none-any.whl
+
+# 2. Commit and tag
+git commit -m "Release v<VERSION>: <one-line summary>"
+git tag v<VERSION>
+
+# 3. Push commit + tag together
+git push origin main --tags
 ```
 
-Report the release URL from `gh release view <VERSION> --json url -q .url`.
+Then create the GitHub release and attach the wheel as a downloadable asset:
+
+```bash
+gh release create v<VERSION> dist/md_to_pdf-<VERSION>-py3-none-any.whl \
+  --title "v<VERSION>" \
+  --notes "## What's new
+
+<bullet points from CHANGELOG — same content as the ### Added / ### Changed sections>
+
+No breaking changes. Full changelog: [CHANGELOG.md](CHANGELOG.md)"
+```
+
+Report the release URL returned by `gh release create` (printed to stdout).
