@@ -58,9 +58,10 @@ Do NOT open the editor interactively. Instead:
 
 ## Step 4 — Bump versions
 
-Update `setup.py` and `md_to_pdf/__init__.py` using `search_and_replace`:
-- `version="<OLD>"` → `version="<NEW>"`
-- `__version__ = "<OLD>"` → `__version__ = "<NEW>"`
+Update `setup.py`, `md_to_pdf/__init__.py`, and `README.md` using `search_and_replace`:
+- `setup.py`: `version="<OLD>"` → `version="<NEW>"`
+- `__init__.py`: `__version__ = "<OLD>"` → `__version__ = "<NEW>"`
+- `README.md`: all occurrences of `md_to_pdf-<OLD>-py3-none-any.whl` → `md_to_pdf-<NEW>-py3-none-any.whl`
 
 ## Step 5 — Build wheel
 
@@ -88,7 +89,7 @@ Only after explicit confirmation, run these commands **in order**:
 
 ```bash
 # 1. Stage all release artefacts — including the wheel
-git add setup.py md_to_pdf/__init__.py CHANGELOG.md dist/md_to_pdf-<VERSION>-py3-none-any.whl
+git add setup.py md_to_pdf/__init__.py CHANGELOG.md README.md dist/md_to_pdf-<VERSION>-py3-none-any.whl
 
 # 2. Commit and tag
 git commit -m "Release v<VERSION>: <one-line summary>"
