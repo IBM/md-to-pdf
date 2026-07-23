@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-07-23
+
+### Added
+- **Blockquote support**: Lines starting with `> ` are converted to HTML `<blockquote>` elements with left-border styling
+- **Nested list support**: Stack-based parser handles arbitrarily nested unordered and ordered lists
+- **Task list support**: Items with `- [ ]` and `- [x]` render as disabled checkboxes
+- **Strikethrough support**: `~~text~~` syntax renders as `<s>` HTML elements
+- **Auto-install Chromium**: On first launch, missing Chromium binary is detected and installed automatically via `playwright install chromium` — no manual setup required
+
+### Changed
+- Rewrote list parsing in [`convert_lists()`](md_to_pdf/md2html.py) to use a stack-based approach for proper nesting
+- Added CSS for task list items (hidden bullet, checkbox alignment)
+
+### Technical Details
+- Modified files: [`md2html.py`](md_to_pdf/md2html.py), [`html2pdf.py`](md_to_pdf/html2pdf.py)
+
 ## [1.5.0] - 2026-01-27
 
 ### Added
@@ -295,6 +311,17 @@ Major cleanup by removing deprecated scripts and files, consolidating the codeba
 ---
 
 ## Migration Guide
+
+### Upgrading to 1.6.0
+
+Version 1.6.0 adds new Markdown rendering features and removes the manual Chromium install step.
+
+**What's new:**
+- Blockquotes, nested lists, task lists (`- [ ]` / `- [x]`), and strikethrough (`~~text~~`)
+- Chromium is installed automatically on first run — no `playwright install chromium` needed
+
+**Migration:**
+No changes required. All new features are handled transparently during conversion.
 
 ### Upgrading to 1.5.0
 
