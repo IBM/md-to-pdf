@@ -331,8 +331,17 @@ def _generate_pdf_with_browser(html_path: Path, pdf_path: Path, orientation: str
     """
     try:
         with sync_playwright() as p:
-            # Launch browser (headless)
-            browser = p.chromium.launch(headless=True)
+            try:
+                browser = p.chromium.launch(headless=True)
+            except Exception:
+                # Chromium binaries missing — install automatically
+                print("    ⟶ Chromium not found, installing automatically...")
+                import subprocess
+                subprocess.run(
+                    ['playwright', 'install', 'chromium'],
+                    check=True
+                )
+                browser = p.chromium.launch(headless=True)
             try:
                 page = browser.new_page()
 
