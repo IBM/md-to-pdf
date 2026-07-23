@@ -50,46 +50,56 @@ def convert_blockquotes(html):
     return '\n'.join(result)
 
 def convert_lists(html):
-    """Convert markdown lists to HTML with proper nesting"""
+    """Convert markdown lists to HTML with proper nesting and task list support"""
     lines = html.split('\n')
     result = []
-    in_ul = False
-    in_ol = False
-    
+    stack = []  # ponytail: (indent, tag) stack — no class needed for this state
+
+    def close_all():
+        while stack:
+            result.append(f'</{stack.pop()[1]}>')
+
     for line in lines:
-        # Unordered lists
-        if line.strip().startswith('- '):
-            if in_ol:
-                result.append('</ol>')
-                in_ol = False
-            if not in_ul:
-                result.append('<ul>')
-                in_ul = True
-            result.append(f'<li>{line.strip()[2:]}</li>')
-        # Ordered lists
-        elif re.match(r'^\d+\.\s', line.strip()):
-            if in_ul:
-                result.append('</ul>')
-                in_ul = False
-            if not in_ol:
-                result.append('<ol>')
-                in_ol = True
-            content = re.sub(r'^\d+\.\s', '', line.strip())
-            result.append(f'<li>{content}</li>')
-        else:
-            if in_ul:
-                result.append('</ul>')
-                in_ul = False
-            if in_ol:
-                result.append('</ol>')
-                in_ol = False
+        m = re.match(r'^( *)(- |\d+\. )(.*)', line)
+        if not m:
+            if stack:
+                result.append('</li>')
+                close_all()
             result.append(line)
-    
-    if in_ul:
-        result.append('</ul>')
-    if in_ol:
-        result.append('</ol>')
-    
+            continue
+
+        indent = len(m.group(1))
+        tag = 'ul' if m.group(2) == '- ' else 'ol'
+        content = m.group(3)
+
+        # Task list checkbox
+        task = re.match(r'^\[(x| )\] (.*)', content, re.IGNORECASE)
+        if task:
+            checked = ' checked' if task.group(1).lower() == 'x' else ''
+            content = f'<input type="checkbox" disabled{checked}> {task.group(2)}'
+
+        # Close deeper levels
+        while stack and stack[-1][0] > indent:
+            result.append(f'</{stack.pop()[1]}>')
+            if stack:
+                result.append('</li>')
+
+        if not stack or indent > stack[-1][0]:
+            result.append(f'<{tag}>')
+            stack.append((indent, tag))
+        elif stack[-1][1] != tag:
+            result.append(f'</{stack.pop()[1]}>')
+            result.append(f'<{tag}>')
+            stack.append((indent, tag))
+        else:
+            result.append('</li>')
+
+        result.append(f'<li>{content}')
+
+    if stack:
+        result.append('</li>')
+        close_all()
+
     return '\n'.join(result)
 
 def convert_paragraphs(html):
@@ -129,10 +139,10 @@ def convert_paragraphs(html):
 
 def apply_inline_formatting(html):
     """Apply all inline markdown formatting"""
-    # Convert formatting
     html = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', html)
     html = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<em>\1</em>', html)
     html = re.sub(r'`([^`]+)`', r'<code>\1</code>', html)
+    html = re.sub(r'~~(.+?)~~', r'<s>\1</s>', html)
     return html
 
 def restore_protected_blocks(html, code_blocks, mermaid_blocks):
@@ -615,6 +625,16 @@ ul, ol {{
 
 ul li, ol li {{
     margin: 8px 0;
+}}
+
+li:has(> input[type="checkbox"]) {{
+    list-style: none;
+    margin-left: -20px;
+}}
+
+input[type="checkbox"] {{
+    margin-right: 6px;
+    vertical-align: middle;
 }}
 
 /* Nested list links */

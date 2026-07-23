@@ -7,6 +7,17 @@ This is a test document to verify the Markdown to PDF conversion.
 - **Bold text** and *italic text*
 - [External link](https://www.example.com)
 - Internal links to [Features](#features)
+- ~~Strikethrough text~~
+- Nested list:
+  - Sub-item A
+  - Sub-item B
+
+## Task List
+
+- [x] Blockquote support
+- [x] Nested lists
+- [x] Task lists
+- [ ] Something still to do
 
 ## Code Example
 
