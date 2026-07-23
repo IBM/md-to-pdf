@@ -19,7 +19,6 @@ Professional Markdown to PDF converter with support for Mermaid diagrams, clicka
 ```bash
 # Install
 pip install .
-playwright install chromium
 
 # Convert a document (IBM Plex fonts, portrait)
 md2pdf document.md
