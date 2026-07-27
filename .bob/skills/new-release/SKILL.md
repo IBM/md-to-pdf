@@ -47,14 +47,15 @@ Do NOT open the editor interactively. Instead:
 
 1. Read `CHANGELOG.md` with `read_file`.
 2. Read the header (first 6 lines) and the rest (from line 7).
-3. Build the new entry:
+3. Get today's date first: run `date +%Y-%m-%d` — do NOT hardcode or guess it.
+4. Build the new entry:
    ```
    ## [<VERSION>] - <YYYY-MM-DD>
 
    <formatted description from Step 2>
    ```
-4. Prepend it between the header and the rest using `apply_diff` or `write_file`.
-5. Show a diff preview and ask: *"CHANGELOG sieht gut aus?"*
+5. Prepend it between the header and the rest using `apply_diff` or `write_file`.
+6. Show a diff preview and ask: *"CHANGELOG sieht gut aus?"*
 
 ## Step 4 — Bump versions
 
