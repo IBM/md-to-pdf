@@ -49,13 +49,13 @@ md2pdf-batch docs/ --toc --font-preset classic -o output/
 Download the latest wheel from the [GitHub Releases page](https://github.ibm.com/technology-garage-dach/md-to-pdf/releases/latest) and install it:
 
 ```bash
-pip install md_to_pdf-1.6.1-py3-none-any.whl
+pip install md_to_pdf-1.6.2-py3-none-any.whl
 ```
 
 To upgrade an existing installation:
 
 ```bash
-pip install md_to_pdf-1.6.1-py3-none-any.whl --force-reinstall
+pip install md_to_pdf-1.6.2-py3-none-any.whl --force-reinstall
 ```
 
 Chromium is installed automatically on first run — no extra setup needed.

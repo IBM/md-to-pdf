@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2026-07-25
+
+### Fixed
+- URLs inside inline code spans (backticks) are no longer auto-linked, fixing code blocks not closing visually in PDF output
+
+## [1.6.1] - 2026-07-25
+
+### Changed
+- Updated README installation section: wheel install recommended, removed manual `playwright install chromium` step
+- Clarified auto-install behavior for Chromium on first launch
+
 ## [1.6.0] - 2026-07-23
 
 ### Added
