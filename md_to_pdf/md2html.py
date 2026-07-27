@@ -339,9 +339,18 @@ def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of C
     html = convert_all_headings(html, headings, process_heading)
     
     # Process both images and links with a single regex
-    html = re.sub(r'(!?)\[([^\]]+)\]\(([^\)]+)\)',
-                 lambda m: f'<img src="{m.group(3)}" alt="{m.group(2)}">' if m.group(1) else f'<a href="{m.group(3)}">{m.group(2)}</a>',
-                 html)
+    # ponytail: rewrite local .md hrefs to .pdf — assumes linked .md files are also converted
+    def _link_or_img(m):
+        if m.group(1):
+            return f'<img src="{m.group(3)}" alt="{m.group(2)}">'
+        href = m.group(3)
+        # rewrite local .md links (with optional #anchor) to .pdf
+        local_md = re.match(r'^([^#]+\.md)(#.*)?$', href, re.IGNORECASE)
+        if local_md and not href.startswith('http'):
+            href = local_md.group(1)[:-3] + '.pdf' + (local_md.group(2) or '')
+        return f'<a href="{href}">{m.group(2)}</a>'
+
+    html = re.sub(r'(!?)\[([^\]]+)\]\(([^\)]+)\)', _link_or_img, html)
 
     # Convert anchor links in table of contents
     for slug, level, heading_text in headings:
@@ -378,14 +387,15 @@ def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of C
     html = re.sub(table_pattern, convert_table, html, flags=re.MULTILINE)
 
     # Phase 3: Convert inline elements
-    # Auto-link URLs
+    # Apply inline formatting first so backtick code spans become <code>...</code>
+    # before auto-linking — the (?<!>) lookbehind then prevents linking URLs inside <code>
+    html = apply_inline_formatting(html)
+
+    # Auto-link URLs (skips URLs already inside href="..." or right after > i.e. inside a tag)
     html = re.sub(r'(?<!href=")(?<!>)(https?://[^\s<]+)', r'<a href="\1">\1</a>', html)
 
     # Convert email addresses
     html = re.sub(r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})', r'<a href="mailto:\1">\1</a>', html)
-
-    # Apply inline formatting
-    html = apply_inline_formatting(html)
 
     # Convert horizontal rules
     html = re.sub(r'^---$', r'<hr>', html, flags=re.MULTILINE)
