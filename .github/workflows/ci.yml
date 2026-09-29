@@ -1,0 +1,46 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: Apache-2.0
+# Created with IBM Bob (https://bob.ibm.com)
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Smoke test on Python ${{ matrix.python-version }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.11", "3.12"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package
+        run: pip install .
+
+      - name: Install Playwright Chromium
+        run: playwright install --with-deps chromium
+
+      - name: Smoke test — CLI help
+        run: |
+          md2pdf --help
+          md2html --help
+          html2pdf --help
+          md2pdf-batch --help
+
+      - name: Smoke test — convert example
+        run: md2pdf examples/example.md -o /tmp/example.pdf
+        shell: bash

@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: Apache-2.0
+# Created with IBM Bob (https://bob.ibm.com)
+
 """
 Enhanced markdown to HTML converter with proper hyperlink support
 Handles internal anchors, external links, and table of contents
@@ -304,6 +308,8 @@ def insert_toc(html, toc_html, position='after_title'):
 def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of Contents",
             toc_position='after_title', toc_include_first=False):
     """Convert markdown to HTML with optional TOC"""
+    md_dir = Path(md_file).resolve().parent
+
     with open(md_file, 'r') as f:
         content = f.read()
 
@@ -342,7 +348,10 @@ def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of C
     # ponytail: rewrite local .md hrefs to .pdf — assumes linked .md files are also converted
     def _link_or_img(m):
         if m.group(1):
-            return f'<img src="{m.group(3)}" alt="{m.group(2)}">'
+            src = m.group(3)
+            if not src.startswith(('http://', 'https://', 'data:', '/')):
+                src = (md_dir / src).as_uri()
+            return f'<img src="{src}" alt="{m.group(2)}">'
         href = m.group(3)
         # rewrite local .md links (with optional #anchor) to .pdf
         local_md = re.match(r'^([^#]+\.md)(#.*)?$', href, re.IGNORECASE)

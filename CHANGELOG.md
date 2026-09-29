@@ -1,9 +1,29 @@
+<!--
+Copyright IBM Corp. 2025, 2026
+SPDX-License-Identifier: Apache-2.0
+Created with IBM Bob (https://bob.ibm.com)
+-->
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.6.3] - 2026-07-28
+
+### Fixed
+- Images with relative paths now render correctly in PDF when output path differs from source directory — local image `src` attributes are rewritten to absolute `file://` URIs during HTML generation
+
+### Changed
+- Switched from MIT to Apache 2.0 license for open-source release on [github.com/ibm/md-to-pdf](https://github.com/ibm/md-to-pdf)
+- Added SPDX license headers to all source files
+- Added `examples/` directory with a comprehensive example document and sample image
+- Added GitHub Actions workflows for CI (multi-platform matrix) and automated releases
+- Updated all repository URLs to github.com/ibm/md-to-pdf
+
+---
 
 ## [1.6.2] - 2026-07-27
 
@@ -316,7 +336,7 @@ Major cleanup by removing deprecated scripts and files, consolidating the codeba
 
 ### Documentation
 - Comprehensive README.md with installation, usage examples, workflows, troubleshooting, and best practices
-- MIT License
+- Apache 2.0 License
 - Based on [md-to-pdf](https://github.com/crarau/md-to-pdf) and enhanced using IBM Bob
 
 ---
@@ -479,7 +499,5 @@ All functionality is preserved in the new commands with improved features.
 
 ## Links
 
-- [Repository](https://github.ibm.com/technology-garage-dach/md-to-pdf)
-- [Implementation Plan](IMPLEMENTATION_PLAN_ORIENTATION.md)
-- [Deployment Summary](ORIENTATION_FEATURE_DEPLOYMENT_SUMMARY.md)
+- [Repository](https://github.com/ibm/md-to-pdf)
 - [Future Ideas](FUTURE_IDEAS.md)

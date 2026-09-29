@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: Apache-2.0
+# Created with IBM Bob (https://bob.ibm.com)
+
 """
 MD to PDF - Command Line Interface
 
@@ -71,7 +75,7 @@ def convert_md_to_pdf(
     
     # Generate PDF file path if not specified
     pdf_path = md_path.with_suffix('.pdf') if pdf_file is None else Path(pdf_file)
-    
+
     # Generate HTML file path in the same directory as the PDF
     html_file = pdf_path.with_suffix('.html')
     

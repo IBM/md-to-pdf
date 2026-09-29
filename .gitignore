@@ -8,7 +8,7 @@ __pycache__/
 *~
 # Python packaging
 build/
-#dist/
+dist/
 *.egg-info/
 .bob/*
 !.bob/skills/

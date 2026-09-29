@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: Apache-2.0
+# Created with IBM Bob (https://bob.ibm.com)
+
 """
 Image Validator for Markdown to PDF Converter
 
