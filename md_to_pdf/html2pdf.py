@@ -11,6 +11,7 @@ import sys
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
+import argparse
 from pathlib import Path
 from typing import Optional, Literal, Union, Any
 from playwright.sync_api import sync_playwright, Page, TimeoutError as PlaywrightTimeout
@@ -453,7 +454,6 @@ def html_to_pdf_with_links(
     return pdf_path
 
 def main():
-    import argparse
     parser = argparse.ArgumentParser(
         description="Convert HTML to PDF with clickable links using Playwright"
     )

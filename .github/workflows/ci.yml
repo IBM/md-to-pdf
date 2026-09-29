@@ -32,12 +32,7 @@ jobs:
         run: pip install .
 
       - name: Install Playwright Chromium
-        run: playwright install chromium
-        if: runner.os != 'Linux'
-
-      - name: Install Playwright Chromium (Linux with deps)
-        run: playwright install --with-deps chromium
-        if: runner.os == 'Linux'
+        run: playwright install ${{ runner.os == 'Linux' && '--with-deps' || '' }} chromium
 
       - name: Smoke test — CLI help
         run: |

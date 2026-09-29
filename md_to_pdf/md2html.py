@@ -12,6 +12,7 @@ import sys
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
+import argparse
 import re
 from pathlib import Path
 from md_to_pdf.fonts import get_google_fonts_url, get_font_css, DEFAULT_PRESET
@@ -956,7 +957,6 @@ def convert_file(md_file, html_file=None, orientation='portrait', font_preset='i
     return html_file
 
 def main():
-    import argparse
     parser = argparse.ArgumentParser(
         description="Convert Markdown to HTML with link and Mermaid diagram support"
     )
