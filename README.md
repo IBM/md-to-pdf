@@ -1,7 +1,7 @@
 # MD to PDF Converter
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![CI](https://github.com/ibm/md-to-pdf/actions/workflows/ci.yml/badge.svg)](https://github.com/ibm/md-to-pdf/actions/workflows/ci.yml)
+[![CI](https://github.com/IBM/md-to-pdf/actions/workflows/ci.yml/badge.svg)](https://github.com/IBM/md-to-pdf/actions/workflows/ci.yml)
 
 Professional Markdown to PDF converter with support for Mermaid diagrams, clickable links, page orientation control, and beautiful formatting.
 
@@ -49,7 +49,7 @@ md2pdf-batch docs/ --toc --font-preset classic -o output/
 
 ### From Wheel (recommended)
 
-Download the latest wheel from the [GitHub Releases page](https://github.com/ibm/md-to-pdf/releases/latest) and install it:
+Download the latest wheel from the [GitHub Releases page](https://github.com/IBM/md-to-pdf/releases/latest) and install it:
 
 ```bash
 pip install md_to_pdf-*.whl
@@ -66,7 +66,7 @@ Chromium is installed automatically on first run — no extra setup needed.
 ### From Source
 
 ```bash
-git clone https://github.com/ibm/md-to-pdf.git
+git clone https://github.com/IBM/md-to-pdf.git
 cd md-to-pdf
 pip install .
 ```
@@ -509,5 +509,5 @@ Based on [md-to-pdf](https://github.com/crarau/md-to-pdf) (MIT). Enhanced and ex
 
 ## Contributing
 
-Submit issues and pull requests via [GitHub](https://github.com/ibm/md-to-pdf/issues).
+Submit issues and pull requests via [GitHub](https://github.com/IBM/md-to-pdf/issues).
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.

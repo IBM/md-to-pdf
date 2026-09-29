@@ -6,7 +6,7 @@ Created with IBM Bob (https://bob.ibm.com)
 
 # MD to PDF — Example Document
 
-This document demonstrates the features of the [MD to PDF converter](https://github.com/ibm/md-to-pdf).
+This document demonstrates the features of the [MD to PDF converter](https://github.com/IBM/md-to-pdf).
 
 Convert this file to PDF with:
 
@@ -33,7 +33,7 @@ md2pdf example.md --toc --font-preset classic --landscape
 
 Paragraphs support **bold**, *italic*, ~~strikethrough~~, and `inline code`.
 
-[External link](https://github.com/ibm/md-to-pdf) and internal link to [Table of Contents](#table-of-contents).
+[External link](https://github.com/IBM/md-to-pdf) and internal link to [Table of Contents](#table-of-contents).
 
 ## Table of Contents
 

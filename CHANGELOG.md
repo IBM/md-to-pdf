@@ -17,11 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images with relative paths now render correctly in PDF when output path differs from source directory — local image `src` attributes are rewritten to absolute `file://` URIs during HTML generation
 
 ### Changed
-- Switched from MIT to Apache 2.0 license for open-source release on [github.com/ibm/md-to-pdf](https://github.com/ibm/md-to-pdf)
+- Switched from MIT to Apache 2.0 license for open-source release on [github.com/IBM/md-to-pdf](https://github.com/IBM/md-to-pdf)
 - Added SPDX license headers to all source files
 - Added `examples/` directory with a comprehensive example document and sample image
 - Added GitHub Actions workflows for CI (multi-platform matrix) and automated releases
-- Updated all repository URLs to github.com/ibm/md-to-pdf
+- Updated all repository URLs to github.com/IBM/md-to-pdf
 
 ---
 
@@ -499,5 +499,5 @@ All functionality is preserved in the new commands with improved features.
 
 ## Links
 
-- [Repository](https://github.com/ibm/md-to-pdf)
+- [Repository](https://github.com/IBM/md-to-pdf)
 - [Future Ideas](FUTURE_IDEAS.md)

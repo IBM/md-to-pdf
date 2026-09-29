@@ -10,11 +10,11 @@ Our project welcomes external contributions. If you have an itch, please feel
 free to scratch it.
 
 To contribute code or documentation, please submit a
-[pull request](https://github.com/ibm/md-to-pdf/pulls).
+[pull request](https://github.com/IBM/md-to-pdf/pulls).
 
 A good way to familiarize yourself with the codebase and contribution process is
 to look for and tackle low-hanging fruit in the
-[issue tracker](https://github.com/ibm/md-to-pdf/issues).
+[issue tracker](https://github.com/IBM/md-to-pdf/issues).
 Before embarking on a more ambitious contribution, please quickly
 [get in touch](#communication) with us.
 
@@ -24,13 +24,13 @@ long time, or cannot be accepted at all!**
 
 ## Proposing new features
 
-Please [raise an issue](https://github.com/ibm/md-to-pdf/issues) before sending
+Please [raise an issue](https://github.com/IBM/md-to-pdf/issues) before sending
 a pull request so the feature can be discussed. This avoids you investing time
 in a feature the project maintainers may not accept.
 
 ## Fixing bugs
 
-Please [raise an issue](https://github.com/ibm/md-to-pdf/issues) before sending
+Please [raise an issue](https://github.com/IBM/md-to-pdf/issues) before sending
 a pull request so the bug can be tracked.
 
 ## Merge approval
@@ -65,13 +65,13 @@ git commit -s
 
 ## Communication
 
-Please feel free to open a [GitHub Discussion](https://github.com/ibm/md-to-pdf/discussions)
-or create an [issue](https://github.com/ibm/md-to-pdf/issues).
+Please feel free to open a [GitHub Discussion](https://github.com/IBM/md-to-pdf/discussions)
+or create an [issue](https://github.com/IBM/md-to-pdf/issues).
 
 ## Setup
 
 ```bash
-git clone https://github.com/ibm/md-to-pdf.git
+git clone https://github.com/IBM/md-to-pdf.git
 cd md-to-pdf
 uv venv
 uv pip install -e ".[dev]"

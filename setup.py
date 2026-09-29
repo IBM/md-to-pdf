@@ -16,7 +16,7 @@ setup(
     description="Professional Markdown to PDF converter with Mermaid diagrams, clickable links, and page orientation control",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/ibm/md-to-pdf",
+    url="https://github.com/IBM/md-to-pdf",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
