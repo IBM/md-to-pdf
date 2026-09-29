@@ -478,7 +478,7 @@ All commands preserve links by default. If links aren't working, ensure you're u
 ## Requirements
 
 **Automatically Installed:**
-- Python 3.6+
+- Python 3.10+
 - playwright >= 1.40.0
 - markdown >= 3.5.0
 - beautifulsoup4 >= 4.12.0
