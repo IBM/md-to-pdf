@@ -31,8 +31,18 @@ jobs:
       - name: Build wheel and sdist
         run: python -m build
 
+      - name: Extract changelog for this release
+        id: changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          BODY=$(awk "/^## \[$VERSION\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md)
+          echo "body<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$BODY" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+        shell: bash
+
       - name: Create GitHub Release and upload wheel
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.whl
-          generate_release_notes: true
+          body: ${{ steps.changelog.outputs.body }}
