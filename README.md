@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![CI](https://github.com/IBM/md-to-pdf/actions/workflows/ci.yml/badge.svg)](https://github.com/IBM/md-to-pdf/actions/workflows/ci.yml)
+[![GitHub Release](https://img.shields.io/github/v/release/IBM/md-to-pdf)](https://github.com/IBM/md-to-pdf/releases/latest)
 
 Professional Markdown to PDF converter with support for Mermaid diagrams, clickable links, page orientation control, and beautiful formatting.
 
