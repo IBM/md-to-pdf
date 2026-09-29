@@ -11,6 +11,9 @@ Processes multiple files or directories at once.
 """
 
 import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
 import argparse
 from pathlib import Path
 from typing import List, Optional, Literal

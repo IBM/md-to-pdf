@@ -9,6 +9,9 @@ Handles internal anchors, external links, and table of contents
 """
 
 import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
 import re
 from pathlib import Path
 from md_to_pdf.fonts import get_google_fonts_url, get_font_css, DEFAULT_PRESET

@@ -11,6 +11,9 @@ Converts Markdown files to PDF with support for Mermaid diagrams and clickable l
 """
 
 import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
 from pathlib import Path
 import argparse
 from typing import Optional, Literal
