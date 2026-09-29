@@ -953,21 +953,19 @@ def convert_file(md_file, html_file=None, orientation='portrait', font_preset='i
     return html_file
 
 def main():
-    if len(sys.argv) < 2:
-        print("Enhanced Markdown to HTML Converter with Link Support")
-        print("=" * 50)
-        print("\nUsage: md2html file.md [output.html]")
-        sys.exit(1)
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="Convert Markdown to HTML with link and Mermaid diagram support"
+    )
+    parser.add_argument("input_file", help="Path to the Markdown file")
+    parser.add_argument("output_file", nargs="?", help="Path for the output HTML file")
+    args = parser.parse_args()
 
-    md_file = sys.argv[1]
-    
-    if len(sys.argv) > 2:
-        html_file = sys.argv[2]
-    else:
-        html_file = None
+    md_file = args.input_file
+    html_file = args.output_file
 
     if not Path(md_file).exists():
-        print(f"❌ Error: File not found: {md_file}")
+        print(f"❌ Error: File not found: {md_file}", file=sys.stderr)
         sys.exit(1)
 
     print(f"Converting {md_file} to HTML with hyperlinks...")
@@ -981,7 +979,7 @@ def main():
         print("3. Press Ctrl+P → Save as PDF")
         print("\n✨ Links will be clickable in the PDF!")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error: {e}", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == '__main__':

@@ -32,7 +32,12 @@ jobs:
         run: pip install .
 
       - name: Install Playwright Chromium
+        run: playwright install chromium
+        if: runner.os != 'Linux'
+
+      - name: Install Playwright Chromium (Linux with deps)
         run: playwright install --with-deps chromium
+        if: runner.os == 'Linux'
 
       - name: Smoke test — CLI help
         run: |
@@ -41,6 +46,10 @@ jobs:
           html2pdf --help
           md2pdf-batch --help
 
-      - name: Smoke test — convert example
+      - name: Smoke test — convert example (Unix)
         run: md2pdf examples/example.md -o /tmp/example.pdf
-        shell: bash
+        if: runner.os != 'Windows'
+
+      - name: Smoke test — convert example (Windows)
+        run: md2pdf examples/example.md -o "$env:TEMP\example.pdf"
+        if: runner.os == 'Windows'

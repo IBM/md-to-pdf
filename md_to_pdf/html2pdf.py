@@ -450,34 +450,33 @@ def html_to_pdf_with_links(
     return pdf_path
 
 def main():
-    if len(sys.argv) < 2:
-        print("HTML to PDF Converter with Clickable Links")
-        print("=" * 45)
-        print("\nUsage: html2pdf file.html [output.pdf]")
-        print("\nThis will create a PDF with:")
-        print("  ✅ Clickable table of contents")
-        print("  ✅ Working internal anchor links")
-        print("  ✅ Clickable external URLs")
-        print("  ✅ Clickable email addresses")
-        sys.exit(1)
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="Convert HTML to PDF with clickable links using Playwright"
+    )
+    parser.add_argument("input_file", help="Path to the HTML file")
+    parser.add_argument("output_file", nargs="?", help="Path for the output PDF file")
+    parser.add_argument(
+        "-l", "--landscape",
+        action="store_true",
+        help="Use landscape orientation (default: portrait)"
+    )
+    args = parser.parse_args()
 
-    html_file = sys.argv[1]
-    
-    if len(sys.argv) > 2:
-        pdf_file = sys.argv[2]
-    else:
-        pdf_file = None
+    html_file = args.input_file
+    pdf_file = args.output_file
+    orientation = "landscape" if args.landscape else "portrait"
 
     if not Path(html_file).exists():
-        print(f"❌ Error: File not found: {html_file}")
+        print(f"❌ Error: File not found: {html_file}", file=sys.stderr)
         sys.exit(1)
 
     if not html_file.endswith('.html'):
-        print(f"❌ Error: Input must be an HTML file")
+        print(f"❌ Error: Input must be an HTML file", file=sys.stderr)
         sys.exit(1)
 
     try:
-        pdf_path = html_to_pdf_with_links(html_file, pdf_file)
+        pdf_path = html_to_pdf_with_links(html_file, pdf_file, orientation)
         size = pdf_path.stat().st_size / 1024
         print(f"✅ PDF created: {pdf_path.name} ({size:.1f} KB)")
         print(f"\n✨ All hyperlinks are clickable in the PDF!")
@@ -485,7 +484,7 @@ def main():
         print(f"   - Email addresses are clickable")
         print(f"   - External URLs open in browser")
     except Exception as e:
-        print(f"❌ Error creating PDF: {e}")
+        print(f"❌ Error creating PDF: {e}", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == '__main__':
