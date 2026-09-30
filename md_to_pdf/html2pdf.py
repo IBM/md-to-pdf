@@ -12,6 +12,8 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
 import argparse
+
+from md_to_pdf import __version__
 from pathlib import Path
 from typing import Optional, Literal, Union, Any
 from playwright.sync_api import sync_playwright, Page, TimeoutError as PlaywrightTimeout
@@ -464,6 +466,7 @@ def main():
         action="store_true",
         help="Use landscape orientation (default: portrait)"
     )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     args = parser.parse_args()
 
     html_file = args.input_file
