@@ -27,7 +27,7 @@ If the user passed a version argument directly (e.g. `/new-release 1.6.0`), skip
 ## Step 2 — Collect the release description
 
 Ask the user: *"What's new in this release?"*
-Collect a few bullet points. This becomes the CHANGELOG body (### Added / ### Changed / ### Fixed).
+Collect a few bullet points. This becomes the CHANGELOG body (### Added / ### Improved / ### Fixed).
 
 Format the input as valid CHANGELOG markdown before proceeding:
 ```
@@ -35,7 +35,7 @@ Format the input as valid CHANGELOG markdown before proceeding:
 - <bullet 1>
 - <bullet 2>
 
-### Changed / Fixed (only if applicable)
+### Improved / Fixed (only if applicable)
 - ...
 ```
 
@@ -64,52 +64,35 @@ Update `setup.py`, `md_to_pdf/__init__.py`, and `README.md` using `search_and_re
 - `__init__.py`: `__version__ = "<OLD>"` → `__version__ = "<NEW>"`
 - `README.md`: all occurrences of `md_to_pdf-<OLD>-py3-none-any.whl` → `md_to_pdf-<NEW>-py3-none-any.whl`
 
-## Step 5 — Build wheel
-
-```bash
-uv build --wheel --out-dir dist/
-```
-
-Confirm the file `dist/md_to_pdf-<VERSION>-py3-none-any.whl` exists.
-
-## Step 6 — Final confirmation
+## Step 5 — Final confirmation
 
 Show a summary:
 ```
 Version:   1.5.0 → 1.6.0
-Wheel:     dist/md_to_pdf-1.6.0-py3-none-any.whl
-Tag:       1.6.0
-Commit:    "Release 1.6.0"
+Tag:       v1.6.0
+Commit:    "Release v1.6.0"
 ```
 
-Ask: *"Alles klar — soll ich pushen und das GitHub Release erstellen?"*
+Ask: *"Alles klar — soll ich committen, taggen und pushen?"*
 
-## Step 7 — Commit, tag, push & GitHub Release
+## Step 6 — Commit, tag, push
 
 Only after explicit confirmation, run these commands **in order**:
 
 ```bash
-# 1. Stage all release artefacts — including the wheel
-git add setup.py md_to_pdf/__init__.py CHANGELOG.md README.md dist/md_to_pdf-<VERSION>-py3-none-any.whl
+# 1. Stage release files
+git add setup.py md_to_pdf/__init__.py CHANGELOG.md README.md
 
 # 2. Commit and tag
 git commit -m "Release v<VERSION>: <one-line summary>"
 git tag v<VERSION>
 
-# 3. Push commit + tag together
+# 3. If on a feature/release branch, merge to main first
+git checkout main
+git merge <branch> --ff-only
+
+# 4. Push commit + tag — triggers GitHub Actions (builds wheel + creates GitHub Release)
 git push origin main --tags
 ```
 
-Then create the GitHub release and attach the wheel as a downloadable asset:
-
-```bash
-gh release create v<VERSION> dist/md_to_pdf-<VERSION>-py3-none-any.whl \
-  --title "v<VERSION>" \
-  --notes "## What's new
-
-<bullet points from CHANGELOG — same content as the ### Added / ### Changed sections>
-
-No breaking changes. Full changelog: [CHANGELOG.md](CHANGELOG.md)"
-```
-
-Report the release URL returned by `gh release create` (printed to stdout).
+Report that GitHub Actions will automatically build the wheel and create the GitHub Release.
