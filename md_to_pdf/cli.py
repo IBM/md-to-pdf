@@ -71,7 +71,8 @@ def convert_md_to_pdf(
         raise ValueError(f"Input must be a Markdown (.md) file")
     
     # Validate images before processing
-    if not validate_images(md_path, strict_mode=strict_images) and strict_images:
+    passed, validation_result = validate_images(md_path, strict_mode=strict_images)
+    if not passed:
         sys.exit(1)
     
     # Generate PDF file path if not specified
@@ -104,7 +105,6 @@ def convert_md_to_pdf(
     print(f"✅ PDF created: {pdf_path.name} ({size:.1f} KB)")
     if validation_result.has_missing_images:
         print(f"⚠️  {validation_result.missing_count} image(s) missing — PDF may be incomplete", file=sys.stderr)
-    
     return pdf_path
 
 def main():

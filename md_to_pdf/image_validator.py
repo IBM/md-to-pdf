@@ -155,17 +155,21 @@ class ImageValidator:
             print(f"\nWarning: Found {result.missing_count} missing image reference(s)", file=sys.stderr)
 
 
-def validate_images(md_file: Path, strict_mode: bool = False) -> bool:
-    """
-    Validate images in a markdown file and report results.
+def validate_images(md_file: Path, strict_mode: bool = False) -> tuple[bool, "ValidationResult"]:
+    """Validate images in a single Markdown file and report results.
+
+    Args:
+        md_file: Path to the Markdown file to validate.
+        strict_mode: If True, treat missing images as errors.
 
     Returns:
-        True if validation passed (or warnings only), False if strict mode and images missing
+        Tuple of (passed, result) where passed is False only when strict_mode
+        is True and images are missing.
     """
     validator = ImageValidator(strict_mode=strict_mode)
     result = validator.validate_file(md_file)
     validator.report_results(result)
-    return not (strict_mode and result.has_missing_images)
+    return not (strict_mode and result.has_missing_images), result
 
 
 def validate_images_batch(md_files: List[Path], strict_mode: bool = False) -> bool:
