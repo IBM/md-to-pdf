@@ -15,7 +15,7 @@ import argparse
 
 from md_to_pdf import __version__
 from pathlib import Path
-from typing import Optional, Literal, Union, Any
+from typing import Literal
 from playwright.sync_api import sync_playwright, Page, TimeoutError as PlaywrightTimeout
 
 # Timeout constants (in milliseconds)
@@ -31,12 +31,6 @@ WIDE_DIAGRAM_THRESHOLD = 0.95
 
 # Valid PDF orientations
 VALID_ORIENTATIONS = ('portrait', 'landscape')
-
-# Mermaid selectors
-MERMAID_SELECTOR = '.mermaid'
-MERMAID_CONTAINER_SELECTOR = '.mermaid-container'
-SVG_SELECTOR = 'svg'
-WIDE_DIAGRAM_CLASS = 'wide-diagram'
 
 # Status messages
 MSG_NO_DIAGRAMS = "    ⟶ No Mermaid diagrams found in document"
@@ -89,61 +83,33 @@ JS_INITIALIZE_MERMAID = '''() => {
     }
 }'''
 
-JS_DETECT_WIDE_DIAGRAMS = f'''() => {{
-    function detectAndMarkWideDiagrams() {{
-        const containers = document.querySelectorAll('.mermaid-container');
-        
-        containers.forEach(container => {{
-            const svg = container.querySelector('svg');
-            if (!svg) return;
-            
-            // Get the SVG's natural (intrinsic) width
-            const viewBox = svg.getAttribute('viewBox');
-            let naturalWidth = 0;
-            
-            if (viewBox) {{
-                // Parse viewBox to get natural width
-                const viewBoxValues = viewBox.split(/[\\s,]+/);
-                naturalWidth = parseFloat(viewBoxValues[2]);
-            }} else {{
-                // Fallback to width attribute or computed width
-                naturalWidth = parseFloat(svg.getAttribute('width')) || svg.getBBox().width;
-            }}
-            
-            // Get the current rendered width
-            const renderedWidth = svg.getBoundingClientRect().width;
-            
-            // If the diagram is being scaled down, mark it as wide
-            const scalingThreshold = {WIDE_DIAGRAM_THRESHOLD};
-            if (naturalWidth > renderedWidth * scalingThreshold) {{
-                container.classList.add('wide-diagram');
-            }}
-        }});
-    }}
-    
-    detectAndMarkWideDiagrams();
-}}'''
+JS_DETECT_WIDE_DIAGRAMS = '''(threshold) => {
+    document.querySelectorAll('.mermaid-container').forEach(container => {
+        const svg = container.querySelector('svg');
+        if (!svg) return;
+        const viewBox = svg.getAttribute('viewBox');
+        const naturalWidth = viewBox
+            ? parseFloat(viewBox.split(/[\\s,]+/)[2])
+            : parseFloat(svg.getAttribute('width')) || svg.getBBox().width;
+        const renderedWidth = svg.getBoundingClientRect().width;
+        if (naturalWidth > renderedWidth * threshold) {
+            container.classList.add('wide-diagram');
+        }
+    });
+}'''
 
 JS_COUNT_SVGS = '''() => {
-    return document.querySelectorAll('svg').length;
+    return document.querySelectorAll('.mermaid-container svg').length;
 }'''
 
 JS_COUNT_WIDE_DIAGRAMS = '''() => {
     return document.querySelectorAll('.mermaid-container.wide-diagram').length;
 }'''
 
-def _has_mermaid_diagrams(page: Page) -> bool:
-    """Return True if the page contains any Mermaid diagram elements."""
-    return page.evaluate(JS_CHECK_MERMAID_EXISTS)
-
-
 def _wait_for_mermaid_library(page: Page) -> bool:
     """Wait for the Mermaid JS library to be available. Returns False on timeout."""
     try:
-        page.wait_for_function(
-            JS_WAIT_FOR_MERMAID,
-            timeout=MERMAID_LIBRARY_TIMEOUT_MS
-        )
+        page.wait_for_function(JS_WAIT_FOR_MERMAID, timeout=MERMAID_LIBRARY_TIMEOUT_MS)
         return True
     except PlaywrightTimeout:
         print(MSG_LIBRARY_NOT_LOADED)
@@ -153,212 +119,45 @@ def _wait_for_mermaid_library(page: Page) -> bool:
         return False
 
 
-def _fix_paragraph_wrapping(page: Page) -> None:
-    """Move Mermaid diagrams out of wrapping <p> tags that some markdown processors insert."""
-    page.evaluate(JS_FIX_PARAGRAPH_WRAPPING)
-
-
-def _initialize_and_render_mermaid(page: Page) -> None:
-    """Initialize the Mermaid library and trigger diagram rendering."""
-    page.evaluate(JS_INITIALIZE_MERMAID)
-
-
-def _wait_for_svg_rendering(page: Page) -> bool:
-    """Wait for SVG elements to appear. Returns False on timeout."""
-    try:
-        page.wait_for_selector(
-            SVG_SELECTOR,
-            state='attached',
-            timeout=MERMAID_SVG_RENDER_TIMEOUT_MS
-        )
-        return True
-    except PlaywrightTimeout:
-        print(MSG_SVG_TIMEOUT)
-        return False
-    except Exception as e:
-        print(f"    ⟶ Unexpected error waiting for SVG: {e}")
-        return False
-
-
-def _detect_and_mark_wide_diagrams(page: Page) -> None:
-    """Mark diagrams wider than the page with 'wide-diagram' class for full-width landscape styling."""
-    page.evaluate(JS_DETECT_WIDE_DIAGRAMS)
-
-
-def _report_rendering_status(page: Page) -> None:
-    """Print rendering status (SVG count, wide diagrams) to stdout."""
-    svg_count = page.evaluate(JS_COUNT_SVGS)
-    wide_count = page.evaluate(JS_COUNT_WIDE_DIAGRAMS)
-    
-    if svg_count > 0:
-        print(MSG_DIAGRAMS_RENDERED.format(svg_count))
-        if wide_count > 0:
-            print(MSG_WIDE_DIAGRAMS.format(wide_count))
-    else:
-        print(MSG_TEXT_FALLBACK)
-
-
 def _handle_mermaid_diagrams(page: Page) -> None:
-    """
-    Handle Mermaid diagram rendering in the page.
-    
-    This function orchestrates the complete Mermaid diagram handling process:
-    1. Checks if Mermaid diagrams exist
-    2. Waits for Mermaid library to load
-    3. Fixes paragraph wrapping issues
-    4. Initializes and renders diagrams
-    5. Waits for SVG rendering
-    6. Auto-detects and marks wide diagrams
-    7. Reports rendering status
-    
-    Args:
-        page: Playwright Page object with loaded HTML content
-        
-    Note:
-        Continues execution even if Mermaid rendering fails,
-        falling back to text representation.
-    """
+    """Orchestrate Mermaid rendering: check, load, fix, init, wait, mark wide, report."""
     try:
-        # Check if there are any Mermaid diagrams
-        if not _has_mermaid_diagrams(page):
+        if not page.evaluate(JS_CHECK_MERMAID_EXISTS):
             print(MSG_NO_DIAGRAMS)
             return
-        
+
         print(MSG_WAITING)
-        
-        # Wait for Mermaid library to be available
+
         if not _wait_for_mermaid_library(page):
             return
-        
-        # Fix any paragraph tags that might be wrapping Mermaid diagrams
-        _fix_paragraph_wrapping(page)
-        
-        # Initialize Mermaid and trigger rendering
-        _initialize_and_render_mermaid(page)
-        
-        # Wait for SVG elements to be rendered
-        _wait_for_svg_rendering(page)
-        
-        # Auto-detect and mark wide diagrams
-        _detect_and_mark_wide_diagrams(page)
-        
-        # Report rendering status
-        _report_rendering_status(page)
-        
+
+        page.evaluate(JS_FIX_PARAGRAPH_WRAPPING)
+        page.evaluate(JS_INITIALIZE_MERMAID)
+
+        try:
+            page.wait_for_selector('.mermaid-container svg', state='attached', timeout=MERMAID_SVG_RENDER_TIMEOUT_MS)
+        except PlaywrightTimeout:
+            print(MSG_SVG_TIMEOUT)
+        except Exception as e:
+            print(f"    ⟶ Unexpected error waiting for SVG: {e}")
+
+        page.evaluate(JS_DETECT_WIDE_DIAGRAMS, WIDE_DIAGRAM_THRESHOLD)
+
+        svg_count = page.evaluate(JS_COUNT_SVGS)
+        wide_count = page.evaluate(JS_COUNT_WIDE_DIAGRAMS)
+        if svg_count > 0:
+            print(MSG_DIAGRAMS_RENDERED.format(svg_count))
+            if wide_count > 0:
+                print(MSG_WIDE_DIAGRAMS.format(wide_count))
+        else:
+            print(MSG_TEXT_FALLBACK)
+
     except Exception as e:
-        # Continue even if there are errors with Mermaid rendering
         print(f"    ⟶ Note: {str(e)}")
 
-def _resolve_paths(
-    html_file: Union[str, Path],
-    pdf_file: Optional[Union[str, Path]]
-) -> tuple[Path, Path]:
-    """
-    Resolve and validate input/output file paths.
-    
-    Args:
-        html_file: Path to the HTML file (string or Path object)
-        pdf_file: Optional path for output PDF (string, Path, or None)
-        
-    Returns:
-        tuple: (html_path, pdf_path) as absolute Path objects
-        
-    Note:
-        If pdf_file is None, generates PDF filename from HTML filename
-        by replacing the extension with .pdf
-    """
-    html_path = Path(html_file).absolute()
-    
-    if pdf_file is None:
-        pdf_path = html_path.with_suffix('.pdf')
-    else:
-        pdf_path = Path(pdf_file).absolute()
-    
-    return html_path, pdf_path
-
-
-def _generate_pdf_with_browser(html_path: Path, pdf_path: Path, orientation: str) -> None:
-    """
-    Generate PDF from HTML using Playwright browser.
-    
-    Args:
-        html_path: Absolute path to the HTML file
-        pdf_path: Absolute path for the output PDF file
-        orientation: Page orientation ('portrait' or 'landscape')
-        
-    Raises:
-        Exception: Re-raises any browser-related exceptions with file context
-    """
-    try:
-        with sync_playwright() as p:
-            try:
-                browser = p.chromium.launch(headless=True)
-            except Exception:
-                # Chromium binaries missing — install automatically
-                print("    ⟶ Chromium not found, installing automatically...")
-                import subprocess
-                subprocess.run(
-                    ['playwright', 'install', 'chromium'],
-                    check=True
-                )
-                browser = p.chromium.launch(headless=True)
-            try:
-                page = browser.new_page()
-
-                # Navigate to the HTML file with proper URL encoding
-                # Use as_uri() to handle special characters like #, spaces, etc.
-                file_url = html_path.as_uri()
-                page.goto(file_url)
-
-                # Wait for page to be fully loaded (network idle state)
-                page.wait_for_load_state('networkidle')
-                
-                # Handle Mermaid diagrams
-                _handle_mermaid_diagrams(page)
-
-                # Generate PDF with settings optimized for links
-                page.pdf(**_get_pdf_config(pdf_path, orientation))
-            finally:
-                # Ensure browser is always closed, even if an exception occurs
-                browser.close()
-    except Exception as e:
-        # Add file context to any browser-related errors
-        raise Exception(f"Failed to generate PDF from '{html_path.name}': {str(e)}") from e
-
-
-def _get_pdf_config(pdf_path: Path, orientation: str) -> dict[str, Any]:
-    """
-    Generate PDF configuration dictionary for Playwright.
-    
-    Args:
-        pdf_path: Absolute path where PDF will be saved
-        orientation: Page orientation ('portrait' or 'landscape')
-        
-    Returns:
-        dict: Configuration dictionary for page.pdf() method
-        
-    Note:
-        Uses A4 format with 15mm margins on all sides.
-        Preserves background colors and images.
-    """
-    return {
-        'path': str(pdf_path),
-        'format': PDF_FORMAT,
-        'landscape': (orientation == 'landscape'),
-        'print_background': True,
-        'margin': {
-            'top': PDF_MARGIN_MM,
-            'bottom': PDF_MARGIN_MM,
-            'left': PDF_MARGIN_MM,
-            'right': PDF_MARGIN_MM
-        },
-        'display_header_footer': False,
-        'prefer_css_page_size': False
-    }
-
 def html_to_pdf_with_links(
-    html_file: Union[str, Path],
-    pdf_file: Optional[Union[str, Path]] = None,
+    html_file: str | Path,
+    pdf_file: str | Path | None = None,
     orientation: Literal['portrait', 'landscape'] = 'portrait'
 ) -> Path:
     """
@@ -388,20 +187,45 @@ def html_to_pdf_with_links(
         >>> # Create portrait PDF with custom output name
         >>> html_to_pdf_with_links('input.html', 'output.pdf', orientation='portrait')
     """
-    # Validate orientation parameter
     if orientation not in VALID_ORIENTATIONS:
-        raise ValueError(
-            f"Invalid orientation '{orientation}'. "
-            f"Must be one of: {', '.join(VALID_ORIENTATIONS)}"
-        )
+        raise ValueError(f"Invalid orientation '{orientation}'. Must be one of: {', '.join(VALID_ORIENTATIONS)}")
 
-    # Resolve file paths
-    html_path, pdf_path = _resolve_paths(html_file, pdf_file)
+    html_path = Path(html_file).absolute()
+    if not html_path.exists():
+        raise FileNotFoundError(f"HTML file not found: {html_path}")
+    pdf_path = Path(pdf_file).absolute() if pdf_file is not None else html_path.with_suffix('.pdf')
 
     print(f"📄 Converting {html_path.name} to PDF with clickable links...")
 
-    # Generate PDF using browser
-    _generate_pdf_with_browser(html_path, pdf_path, orientation)
+    try:
+        with sync_playwright() as p:
+            try:
+                browser = p.chromium.launch(headless=True)
+            except Exception:
+                print("    ⟶ Chromium not found, installing automatically...")
+                import subprocess
+                subprocess.run(['playwright', 'install', 'chromium'], check=True)
+                browser = p.chromium.launch(headless=True)
+            try:
+                page = browser.new_page()
+                page.goto(html_path.as_uri())
+                page.wait_for_load_state('networkidle')
+                _handle_mermaid_diagrams(page)
+                page.pdf(
+                    path=str(pdf_path),
+                    format=PDF_FORMAT,
+                    landscape=(orientation == 'landscape'),
+                    print_background=True,
+                    margin={'top': PDF_MARGIN_MM, 'bottom': PDF_MARGIN_MM, 'left': PDF_MARGIN_MM, 'right': PDF_MARGIN_MM},
+                    display_header_footer=False,
+                    prefer_css_page_size=False,
+                )
+            finally:
+                browser.close()
+    except FileNotFoundError:
+        raise
+    except Exception as e:
+        raise Exception(f"Failed to generate PDF from '{html_path.name}': {str(e)}") from e
 
     return pdf_path
 
@@ -436,7 +260,7 @@ def main():
         print(f"❌ Error: File not found: {html_file}", file=sys.stderr)
         sys.exit(1)
 
-    if not html_file.endswith('.html'):
+    if Path(html_file).suffix.lower() != '.html':
         print(f"❌ Error: Input must be an HTML file", file=sys.stderr)
         sys.exit(1)
 
