@@ -21,7 +21,7 @@ from typing import Optional, Literal
 from md_to_pdf import __version__
 from md_to_pdf.md2html import convert_file as md_to_html
 from md_to_pdf.html2pdf import html_to_pdf_with_links
-from md_to_pdf.image_validator import ImageValidator
+from md_to_pdf.image_validator import validate_images
 
 def convert_md_to_pdf(
     md_file: str,
@@ -71,10 +71,7 @@ def convert_md_to_pdf(
         raise ValueError(f"Input must be a Markdown (.md) file")
     
     # Validate images before processing
-    validator = ImageValidator(strict_mode=strict_images)
-    validation_result = validator.validate_file(md_path)
-    validator.report_results(validation_result)
-    if strict_images and validation_result.has_missing_images:
+    if not validate_images(md_path, strict_mode=strict_images) and strict_images:
         sys.exit(1)
     
     # Generate PDF file path if not specified
