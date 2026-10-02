@@ -13,7 +13,7 @@ Supports both warning mode (default) and strict mode (abort on missing images).
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple, Set
+
 from dataclasses import dataclass, field
 
 
@@ -21,8 +21,8 @@ from dataclasses import dataclass, field
 class ValidationResult:
     """Results of image validation"""
     total_images: int
-    missing_images: List[Tuple[str, int, str]]  # (path, line_number, markdown_file)
-    files_with_issues: Set[str] = field(default_factory=set)
+    missing_images: list[tuple[str, int, str]]  # (path, line_number, markdown_file)
+    files_with_issues: set[str] = field(default_factory=set)
 
     @property
     def has_missing_images(self) -> bool:
@@ -51,7 +51,7 @@ class ImageValidator:
     def _is_url(self, path: str) -> bool:
         return bool(re.match(self.URL_PATTERN, path.strip()))
 
-    def _extract_inline_images(self, lines: List[str]) -> List[Tuple[str, int, str]]:
+    def _extract_inline_images(self, lines: list[str]) -> list[tuple[str, int, str]]:
         """Extract inline image references from markdown lines."""
         images = []
         for line_num, line in enumerate(lines, start=1):
@@ -59,7 +59,7 @@ class ImageValidator:
                 images.append((match.group(2).strip(), line_num, match.group(1)))
         return images
 
-    def _extract_reference_definitions(self, lines: List[str]) -> dict:
+    def _extract_reference_definitions(self, lines: list[str]) -> dict:
         """Extract reference-style image definitions."""
         references = {}
         for line in lines:
@@ -68,7 +68,7 @@ class ImageValidator:
                 references[match.group(1).strip().lower()] = match.group(2).strip()
         return references
 
-    def _extract_reference_images(self, lines: List[str], references: dict) -> List[Tuple[str, int, str]]:
+    def _extract_reference_images(self, lines: list[str], references: dict) -> list[tuple[str, int, str]]:
         """Extract reference-style image references from markdown lines."""
         images = []
         for line_num, line in enumerate(lines, start=1):
@@ -117,7 +117,7 @@ class ImageValidator:
             files_with_issues=files_with_issues,
         )
 
-    def validate_files(self, md_files: List[Path]) -> ValidationResult:
+    def validate_files(self, md_files: list[Path]) -> ValidationResult:
         """Validate image references in multiple markdown files."""
         total_images = 0
         all_missing = []
@@ -172,7 +172,7 @@ def validate_images(md_file: Path, strict_mode: bool = False) -> tuple[bool, "Va
     return not (strict_mode and result.has_missing_images), result
 
 
-def validate_images_batch(md_files: List[Path], strict_mode: bool = False) -> bool:
+def validate_images_batch(md_files: list[Path], strict_mode: bool = False) -> bool:
     """
     Validate images in multiple markdown files and report results.
 

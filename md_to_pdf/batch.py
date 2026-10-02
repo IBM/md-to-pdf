@@ -16,7 +16,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 import argparse
 from pathlib import Path
-from typing import List, Optional, Literal
+from typing import Literal
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from md_to_pdf import __version__
@@ -26,7 +26,7 @@ from md_to_pdf.image_validator import validate_images_batch
 # Default maximum number of parallel conversions
 DEFAULT_MAX_WORKERS = 4
 
-def find_markdown_files(path: str, recursive: bool = False) -> List[Path]:
+def find_markdown_files(path: str, recursive: bool = False) -> list[Path]:
     """Find all Markdown files in the given path.
 
     Args:
@@ -43,15 +43,15 @@ def find_markdown_files(path: str, recursive: bool = False) -> List[Path]:
         return list(path_obj.glob('**/*.md' if recursive else '*.md'))
     return []
 
-def _determine_output_path(md_file: Path, output_dir: Optional[Path]) -> Path:
+def _determine_output_path(md_file: Path, output_dir: Path | None) -> Path:
     # Returns output_dir/stem.pdf or source sibling stem.pdf.
     if output_dir:
         return output_dir / f"{md_file.stem}.pdf"
     return md_file.with_suffix('.pdf')
 
 def batch_convert(
-    paths: List[str],
-    output_dir: Optional[str] = None,
+    paths: list[str],
+    output_dir: str | None = None,
     recursive: bool = False,
     keep_html: bool = False,
     orientation: Literal['portrait', 'landscape'] = 'portrait',
@@ -63,7 +63,7 @@ def batch_convert(
     toc_position: str = 'after_title',
     toc_include_first: bool = False,
     strict_images: bool = False
-) -> List[Path]:
+) -> list[Path]:
     """Convert multiple Markdown files to PDF in parallel.
 
     Args:
@@ -111,7 +111,7 @@ def batch_convert(
         output_path.mkdir(parents=True, exist_ok=True)
         print(f"📁 Output directory: {output_path}")
 
-    pdf_files: List[Path] = []
+    pdf_files: list[Path] = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_file = {
             executor.submit(

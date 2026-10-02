@@ -16,7 +16,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 from pathlib import Path
 import argparse
-from typing import Optional, Literal
+from typing import Literal
 
 from md_to_pdf import __version__
 from md_to_pdf.md2html import convert_file as md_to_html
@@ -25,7 +25,7 @@ from md_to_pdf.image_validator import validate_images
 
 def convert_md_to_pdf(
     md_file: str,
-    pdf_file: Optional[str] = None,
+    pdf_file: str | None = None,
     keep_html: bool = False,
     orientation: Literal['portrait', 'landscape'] = 'portrait',
     font_preset: str = 'ibm',

@@ -15,6 +15,7 @@ import argparse
 
 from md_to_pdf import __version__
 from pathlib import Path
+
 from typing import Literal
 from playwright.sync_api import sync_playwright, Page, TimeoutError as PlaywrightTimeout
 
