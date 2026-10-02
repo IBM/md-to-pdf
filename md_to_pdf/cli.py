@@ -21,8 +21,7 @@ from typing import Optional, Literal
 from md_to_pdf import __version__
 from md_to_pdf.md2html import convert_file as md_to_html
 from md_to_pdf.html2pdf import html_to_pdf_with_links
-from md_to_pdf.fonts import get_available_presets
-from md_to_pdf.image_validator import validate_images
+from md_to_pdf.image_validator import ImageValidator
 
 def convert_md_to_pdf(
     md_file: str,
@@ -72,8 +71,11 @@ def convert_md_to_pdf(
         raise ValueError(f"Input must be a Markdown (.md) file")
     
     # Validate images before processing
-    if not validate_images(md_path, strict_mode=strict_images):
-        # In strict mode, validation failed
+    validator = ImageValidator(strict_mode=strict_images)
+    validation_result = validator.validate_file(md_path)
+    sys.stdout.flush()
+    validator.report_results(validation_result)
+    if strict_images and validation_result.has_missing_images:
         sys.exit(1)
     
     # Generate PDF file path if not specified
@@ -103,13 +105,9 @@ def convert_md_to_pdf(
         print(f"   ⟶ Removed intermediate HTML file")
     
     size = pdf_path.stat().st_size / 1024
-    
-    # Check if there were any image warnings
-    if strict_images:
-        print(f"✅ PDF created: {pdf_path.name} ({size:.1f} KB)")
-    else:
-        # In warning mode, note if there were missing images
-        print(f"✅ PDF created: {pdf_path.name} ({size:.1f} KB)")
+    print(f"✅ PDF created: {pdf_path.name} ({size:.1f} KB)")
+    if validation_result.has_missing_images:
+        print(f"⚠️  {validation_result.missing_count} image(s) missing — PDF may be incomplete", file=sys.stderr)
     
     print(f"\n✨ All hyperlinks are clickable in the PDF!")
     print(f"   - Table of contents links work")
