@@ -11,6 +11,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.4] - 2026-10-02
+
+### Added
+- `--version` flag for `md2html` and `html2pdf` CLI tools
+- Full CLI parameter parity for `md2html` and `html2pdf`
+- Updated README with `md2html` and `html2pdf` parameter documentation
+
+### Improved
+- Refactored and simplified `batch.py`, `html2pdf.py`, `image_validator.py`, `fonts.py` (~470 lines removed)
+- Missing image warning now shown after PDF creation
+- Removed redundant static terminal output after PDF creation
+- Mermaid dependency bumped from 11.12.0 to 11.17.2
+
+### Fixed
+- CSS img block rendering
+- CLI suffix check and spurious flush
+
 ## [1.6.3] - 2026-09-29
 
 ### Fixed
