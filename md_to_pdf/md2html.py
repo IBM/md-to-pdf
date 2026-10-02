@@ -432,13 +432,16 @@ def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of C
 
 def create_html_document(title, content, orientation='portrait', font_preset='ibm'):
     """
-    Create complete HTML document with enhanced styling and link support
-    
+    Create a complete HTML document with styling and link support.
+
     Args:
-        title: Document title
-        content: HTML content
-        orientation: Page orientation ('portrait' or 'landscape'), default 'portrait'
-        font_preset: Font preset to use ('ibm', 'system', 'classic', 'modern'), default 'ibm'
+        title: Document title used in <title> and heading.
+        content: HTML body content to embed.
+        orientation: Page orientation ('portrait' or 'landscape'), default 'portrait'.
+        font_preset: Font preset ('ibm', 'system', 'classic', 'modern'), default 'ibm'.
+
+    Returns:
+        Complete HTML document as a string.
     """
     # Set page size with orientation
     page_size = f"A4 {orientation}" if orientation == 'landscape' else "A4"
@@ -926,18 +929,24 @@ def convert_file(md_file, html_file=None, orientation='portrait', font_preset='i
                  generate_toc=False, toc_depth=3, toc_title="Table of Contents",
                  toc_position='after_title', toc_include_first=False):
     """
-    Convert markdown file to HTML file with optional TOC
-    
+    Convert a Markdown file to an HTML file.
+
     Args:
-        md_file: Path to markdown file
-        html_file: Optional output HTML file path
-        orientation: Page orientation ('portrait' or 'landscape'), default 'portrait'
-        font_preset: Font preset to use ('ibm', 'system', 'classic', 'modern'), default 'ibm'
-        generate_toc: Generate table of contents
-        toc_depth: Maximum heading level for TOC (1-6)
-        toc_title: Title for the table of contents
-        toc_position: TOC position ('top', 'after_title', 'custom')
-        toc_include_first: Include first H1 heading in TOC
+        md_file: Path to the Markdown file.
+        html_file: Output HTML file path. Defaults to same name as md_file with .html extension.
+        orientation: Page orientation ('portrait' or 'landscape'), default 'portrait'.
+        font_preset: Font preset ('ibm', 'system', 'classic', 'modern'), default 'ibm'.
+        generate_toc: Whether to generate a table of contents.
+        toc_depth: Maximum heading level included in TOC (1-6), default 3.
+        toc_title: Heading text for the TOC, default 'Table of Contents'.
+        toc_position: Where to insert the TOC ('top', 'after_title', 'custom').
+        toc_include_first: Whether to include the first H1 in the TOC.
+
+    Returns:
+        Path to the generated HTML file.
+
+    Raises:
+        FileNotFoundError: If md_file does not exist.
     """
     md_path = Path(md_file)
     

@@ -133,28 +133,12 @@ JS_COUNT_WIDE_DIAGRAMS = '''() => {
 }'''
 
 def _has_mermaid_diagrams(page: Page) -> bool:
-    """
-    Check if the page contains any Mermaid diagrams.
-    
-    Args:
-        page: Playwright Page object with loaded HTML content
-        
-    Returns:
-        bool: True if Mermaid diagrams are found, False otherwise
-    """
+    """Return True if the page contains any Mermaid diagram elements."""
     return page.evaluate(JS_CHECK_MERMAID_EXISTS)
 
 
 def _wait_for_mermaid_library(page: Page) -> bool:
-    """
-    Wait for the Mermaid library to be loaded and available.
-    
-    Args:
-        page: Playwright Page object with loaded HTML content
-        
-    Returns:
-        bool: True if library loaded successfully, False otherwise
-    """
+    """Wait for the Mermaid JS library to be available. Returns False on timeout."""
     try:
         page.wait_for_function(
             JS_WAIT_FOR_MERMAID,
@@ -170,38 +154,17 @@ def _wait_for_mermaid_library(page: Page) -> bool:
 
 
 def _fix_paragraph_wrapping(page: Page) -> None:
-    """
-    Fix paragraph tags that might be wrapping Mermaid diagrams.
-    
-    Some markdown processors wrap diagrams in <p> tags, which can cause
-    rendering issues. This function moves diagrams outside of paragraphs.
-    
-    Args:
-        page: Playwright Page object with loaded HTML content
-    """
+    """Move Mermaid diagrams out of wrapping <p> tags that some markdown processors insert."""
     page.evaluate(JS_FIX_PARAGRAPH_WRAPPING)
 
 
 def _initialize_and_render_mermaid(page: Page) -> None:
-    """
-    Initialize Mermaid library and trigger diagram rendering.
-    
-    Args:
-        page: Playwright Page object with loaded HTML content
-    """
+    """Initialize the Mermaid library and trigger diagram rendering."""
     page.evaluate(JS_INITIALIZE_MERMAID)
 
 
 def _wait_for_svg_rendering(page: Page) -> bool:
-    """
-    Wait for SVG elements to be rendered in the page.
-    
-    Args:
-        page: Playwright Page object with loaded HTML content
-        
-    Returns:
-        bool: True if SVGs rendered successfully, False if timeout
-    """
+    """Wait for SVG elements to appear. Returns False on timeout."""
     try:
         page.wait_for_selector(
             SVG_SELECTOR,
@@ -218,25 +181,12 @@ def _wait_for_svg_rendering(page: Page) -> bool:
 
 
 def _detect_and_mark_wide_diagrams(page: Page) -> None:
-    """
-    Auto-detect diagrams that are wider than the page and mark them.
-    
-    Wide diagrams are marked with the 'wide-diagram' class so they can
-    be styled to use the full printable width in landscape orientation.
-    
-    Args:
-        page: Playwright Page object with loaded HTML content
-    """
+    """Mark diagrams wider than the page with 'wide-diagram' class for full-width landscape styling."""
     page.evaluate(JS_DETECT_WIDE_DIAGRAMS)
 
 
 def _report_rendering_status(page: Page) -> None:
-    """
-    Report the status of Mermaid diagram rendering to the user.
-    
-    Args:
-        page: Playwright Page object with loaded HTML content
-    """
+    """Print rendering status (SVG count, wide diagrams) to stdout."""
     svg_count = page.evaluate(JS_COUNT_SVGS)
     wide_count = page.evaluate(JS_COUNT_WIDE_DIAGRAMS)
     
@@ -456,6 +406,7 @@ def html_to_pdf_with_links(
     return pdf_path
 
 def main():
+    """Entry point for the html2pdf command."""
     parser = argparse.ArgumentParser(
         description="Convert HTML to PDF with clickable links using Playwright"
     )

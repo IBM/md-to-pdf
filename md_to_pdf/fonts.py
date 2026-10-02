@@ -8,12 +8,13 @@ Font configuration module for MD to PDF converter
 Provides font presets and helper functions for Google Fonts integration
 """
 
-from typing import Dict, Tuple, Optional
 from urllib.parse import quote_plus
 
 # Font preset definitions
 # Each preset contains: (font_family, font_weight) tuples for title, body, and code
-FONT_PRESETS: Dict[str, Dict[str, Tuple[str, int]]] = {
+#
+# NOTE: If you add or remove a preset here, also update GOOGLE_FONTS_PRESETS below.
+FONT_PRESETS: dict[str, dict[str, tuple[str, int]]] = {
     'ibm': {
         'title': ('IBM Plex Sans', 700),      # Bold
         'body': ('IBM Plex Sans', 300),       # Light
@@ -36,40 +37,30 @@ FONT_PRESETS: Dict[str, Dict[str, Tuple[str, int]]] = {
     }
 }
 
+# Presets that require Google Fonts — keep in sync with FONT_PRESETS above.
+GOOGLE_FONTS_PRESETS = {'ibm', 'modern'}
+
 # Default preset
 DEFAULT_PRESET = 'ibm'
 
-# Presets that require Google Fonts
-GOOGLE_FONTS_PRESETS = {'ibm', 'modern'}
 
-
-def get_google_fonts_url(preset_name: str) -> Optional[str]:
+def get_google_fonts_url(preset_name: str) -> str | None:
     """
-    Generate Google Fonts URL for the specified preset
-    
+    Generate Google Fonts URL for the specified preset.
+
     Args:
-        preset_name: Name of the font preset
-        
+        preset_name: Name of the font preset.
+
     Returns:
-        Google Fonts URL string, or None if preset doesn't use Google Fonts
-        
-    Examples:
-        >>> get_google_fonts_url('ibm')
-        'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@200;600&family=IBM+Plex+Mono:wght@300&display=swap'
-        
-        >>> get_google_fonts_url('system')
-        None
+        Google Fonts CSS URL, or None if the preset doesn't use Google Fonts.
     """
     if preset_name not in GOOGLE_FONTS_PRESETS:
         return None
-    
-    if preset_name not in FONT_PRESETS:
-        raise ValueError(f"Unknown font preset: {preset_name}")
-    
+
     preset = FONT_PRESETS[preset_name]
     
     # Collect unique font families and their weights
-    font_families: Dict[str, set] = {}
+    font_families: dict[str, set] = {}
     
     for font_type in ['title', 'body', 'code']:
         font_family, weight = preset[font_type]
@@ -94,27 +85,19 @@ def get_google_fonts_url(preset_name: str) -> Optional[str]:
     return url
 
 
-def get_font_css(preset_name: str) -> Dict[str, Tuple[str, int]]:
+def get_font_css(preset_name: str) -> dict[str, tuple[str, int]]:
     """
-    Get font CSS configuration for the specified preset
-    
+    Get font CSS configuration for the specified preset.
+
     Args:
-        preset_name: Name of the font preset
-        
+        preset_name: Name of the font preset.
+
     Returns:
-        Dictionary with 'title', 'body', and 'code' keys, each containing
-        a tuple of (font_family, font_weight)
-        
+        Dict with 'title', 'body', and 'code' keys, each mapping to
+        a (font_family, font_weight) tuple.
+
     Raises:
-        ValueError: If preset_name is not recognized
-        
-    Examples:
-        >>> get_font_css('ibm')
-        {
-            'title': ('IBM Plex Sans', 600),
-            'body': ('IBM Plex Sans', 200),
-            'code': ('IBM Plex Mono', 300)
-        }
+        ValueError: If preset_name is not recognized.
     """
     if preset_name not in FONT_PRESETS:
         raise ValueError(
@@ -124,28 +107,6 @@ def get_font_css(preset_name: str) -> Dict[str, Tuple[str, int]]:
     
     return FONT_PRESETS[preset_name].copy()
 
-
-def get_available_presets() -> list:
-    """
-    Get list of available font preset names
-    
-    Returns:
-        List of preset names
-    """
-    return list(FONT_PRESETS.keys())
-
-
-def validate_preset(preset_name: str) -> bool:
-    """
-    Check if a preset name is valid
-    
-    Args:
-        preset_name: Name of the font preset to validate
-        
-    Returns:
-        True if preset exists, False otherwise
-    """
-    return preset_name in FONT_PRESETS
 
 
 # Made with Bob
