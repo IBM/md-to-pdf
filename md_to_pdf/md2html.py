@@ -367,13 +367,6 @@ def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of C
 
     html = re.sub(r'(!?)\[([^\]]+)\]\(([^\)]+)\)', _link_or_img, html)
 
-    # Convert anchor links in table of contents
-    for slug, level, heading_text in headings:
-        # Replace [Title](#anchor) with proper link
-        html = html.replace(f'[{heading_text}](#{slug})', f'<a href="#{slug}">{heading_text}</a>')
-        # Also handle variations with different anchor formats
-        html = html.replace(f'](#{slug})', f'<a href="#{slug}">{heading_text}</a>')
-
     # Convert tables
     def convert_table(match):
         lines = match.group(0).strip().split('\n')
@@ -832,6 +825,7 @@ img {{
     border-radius: 5px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     page-break-inside: avoid;
+}}
 
 /* Table of Contents Styling */
 .table-of-contents {{
