@@ -127,18 +127,42 @@ md2pdf-batch docs/ --font-preset modern -r -o output/
 Convert Markdown to HTML for inspection or modification.
 
 ```bash
-md2html document.md
-md2html document.md output.html
+md2html document.md                        # default output: document.html
+md2html document.md -o output.html         # custom output file
+md2html document.md -l                     # landscape orientation
+md2html document.md --font-preset modern   # custom font preset
+md2html document.md --toc                  # generate table of contents
+md2html document.md --strict-images        # abort on missing images
 ```
+
+| Option | Description |
+|--------|-------------|
+| `-o`, `--output` | Output HTML file path |
+| `-l`, `--landscape` | Landscape orientation (default: portrait) |
+| `-p`, `--portrait` | Portrait orientation (explicit) |
+| `--font-preset` | Font preset: `ibm` (default), `system`, `classic`, `modern` |
+| `--toc` | Generate table of contents |
+| `--toc-depth` | Max heading level in TOC (1–6, default: 3) |
+| `--toc-title` | TOC heading text (default: `Table of Contents`) |
+| `--toc-position` | TOC placement: `after_title` (default), `top`, `custom` |
+| `--toc-include-first` | Include first H1 in TOC (default: excluded as document title) |
+| `--strict-images` | Abort if referenced images are missing |
 
 ### `html2pdf` - HTML to PDF
 
 Convert HTML files to PDF.
 
 ```bash
-html2pdf document.html
-html2pdf document.html output.pdf
+html2pdf document.html                     # default output: document.pdf
+html2pdf document.html -o output.pdf       # custom output file
+html2pdf document.html -l                  # landscape orientation
 ```
+
+| Option | Description |
+|--------|-------------|
+| `-o`, `--output` | Output PDF file path |
+| `-l`, `--landscape` | Landscape orientation (default: portrait) |
+| `-p`, `--portrait` | Portrait orientation (explicit) |
 
 ## Page Orientation
 
