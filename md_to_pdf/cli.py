@@ -67,13 +67,12 @@ def convert_md_to_pdf(
     if not md_path.exists():
         raise FileNotFoundError(f"File not found: {md_file}")
     
-    if not md_file.endswith('.md'):
+    if md_path.suffix.lower() != '.md':
         raise ValueError(f"Input must be a Markdown (.md) file")
     
     # Validate images before processing
     validator = ImageValidator(strict_mode=strict_images)
     validation_result = validator.validate_file(md_path)
-    sys.stdout.flush()
     validator.report_results(validation_result)
     if strict_images and validation_result.has_missing_images:
         sys.exit(1)
@@ -88,31 +87,26 @@ def convert_md_to_pdf(
     
     # Step 1: Convert Markdown to HTML
     if generate_toc:
-        print(f"   ⟶ Converting Markdown to HTML with TOC...")
+        print("   ⟶ Converting Markdown to HTML with TOC...")
     else:
-        print(f"   ⟶ Converting Markdown to HTML...")
+        print("   ⟶ Converting Markdown to HTML...")
     html_path = md_to_html(md_path, html_file, orientation=orientation, font_preset=font_preset,
                            generate_toc=generate_toc, toc_depth=toc_depth, toc_title=toc_title,
                            toc_position=toc_position, toc_include_first=toc_include_first)
     
     # Step 2: Convert HTML to PDF
-    print(f"   ⟶ Converting HTML to PDF with clickable links...")
+    print("   ⟶ Converting HTML to PDF with clickable links...")
     pdf_path = html_to_pdf_with_links(html_path, pdf_path, orientation=orientation)
     
     # Remove intermediate HTML file if not keeping it
-    if not keep_html and html_path.exists():
-        html_path.unlink()
-        print(f"   ⟶ Removed intermediate HTML file")
+    if not keep_html:
+        html_path.unlink(missing_ok=True)
+        print("   ⟶ Removed intermediate HTML file")
     
     size = pdf_path.stat().st_size / 1024
     print(f"✅ PDF created: {pdf_path.name} ({size:.1f} KB)")
     if validation_result.has_missing_images:
         print(f"⚠️  {validation_result.missing_count} image(s) missing — PDF may be incomplete", file=sys.stderr)
-    
-    print(f"\n✨ All hyperlinks are clickable in the PDF!")
-    print(f"   - Table of contents links work")
-    print(f"   - Email addresses are clickable")
-    print(f"   - External URLs open in browser")
     
     return pdf_path
 
@@ -225,17 +219,17 @@ Examples:
     
     try:
         convert_md_to_pdf(
-            args.input_file,
-            args.output,
-            args.keep_html,
-            orientation,
-            args.font_preset,
-            args.toc,
-            args.toc_depth,
-            args.toc_title,
-            args.toc_position,
-            args.toc_include_first,
-            args.strict_images
+            md_file=args.input_file,
+            pdf_file=args.output,
+            keep_html=args.keep_html,
+            orientation=orientation,
+            font_preset=args.font_preset,
+            generate_toc=args.toc,
+            toc_depth=args.toc_depth,
+            toc_title=args.toc_title,
+            toc_position=args.toc_position,
+            toc_include_first=args.toc_include_first,
+            strict_images=args.strict_images,
         )
     except Exception as e:
         print(f"❌ Error: {e}", file=sys.stderr)
