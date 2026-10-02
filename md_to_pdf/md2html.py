@@ -464,7 +464,7 @@ def create_html_document(title, content, orientation='portrait', font_preset='ib
 <meta charset="UTF-8">
 <title>{title}</title>
 {google_fonts_links}
-<script src="https://unpkg.com/mermaid@11.12.0/dist/mermaid.min.js"></script>
+<script src="https://unpkg.com/mermaid@11.17.2/dist/mermaid.min.js"></script>
 <script>
 // Wait for document to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {{
