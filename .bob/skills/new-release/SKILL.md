@@ -64,7 +64,17 @@ Update `setup.py`, `md_to_pdf/__init__.py`, and `README.md` using `search_and_re
 - `__init__.py`: `__version__ = "<OLD>"` → `__version__ = "<NEW>"`
 - `README.md`: all occurrences of `md_to_pdf-<OLD>-py3-none-any.whl` → `md_to_pdf-<NEW>-py3-none-any.whl`
 
-## Step 5 — Final confirmation
+## Step 5 — Check for unpushed changes
+
+Run:
+```bash
+git status
+git log origin/$(git branch --show-current)..HEAD --oneline
+```
+
+If there are uncommitted changes or unpushed commits, list them and ask the user to confirm they should be included in the release commit — or push them first before continuing.
+
+## Step 6 — Final confirmation
 
 Show a summary:
 ```
@@ -75,7 +85,7 @@ Commit:    "Release v1.6.0"
 
 Ask: *"Alles klar — soll ich committen, taggen und pushen?"*
 
-## Step 6 — Commit, tag, push
+## Step 7 — Commit, tag, push
 
 Only after explicit confirmation, run these commands **in order**:
 
