@@ -963,21 +963,77 @@ def main():
         description="Convert Markdown to HTML with link and Mermaid diagram support"
     )
     parser.add_argument("input_file", help="Path to the Markdown file")
-    parser.add_argument("output_file", nargs="?", help="Path for the output HTML file")
+    parser.add_argument("-o", "--output", help="Path for the output HTML file")
+
+    orientation_group = parser.add_mutually_exclusive_group()
+    orientation_group.add_argument(
+        "-l", "--landscape",
+        action="store_true",
+        help="Use landscape orientation (default: portrait)"
+    )
+    orientation_group.add_argument(
+        "-p", "--portrait",
+        action="store_true",
+        help="Use portrait orientation (default, explicit)"
+    )
+
+    parser.add_argument(
+        "--font-preset",
+        choices=['ibm', 'system', 'classic', 'modern'],
+        default='ibm',
+        help="Font preset: 'ibm' (default), 'system', 'classic', 'modern'"
+    )
+    parser.add_argument("--toc", action="store_true", help="Generate table of contents")
+    parser.add_argument(
+        "--toc-depth",
+        type=int, default=3, choices=range(1, 7), metavar="DEPTH",
+        help="Maximum heading level for TOC (1-6, default: 3)"
+    )
+    parser.add_argument(
+        "--toc-title", default="Table of Contents",
+        help="Title for the table of contents (default: 'Table of Contents')"
+    )
+    parser.add_argument(
+        "--toc-position",
+        choices=['top', 'after_title', 'custom'], default='after_title',
+        help="TOC position: 'top', 'after_title' (default), or 'custom'"
+    )
+    parser.add_argument(
+        "--toc-include-first", action="store_true",
+        help="Include first H1 heading in TOC (default: exclude as document title)"
+    )
+    parser.add_argument(
+        "--strict-images", action="store_true",
+        help="Abort if any referenced images are missing (default: warn and continue)"
+    )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     args = parser.parse_args()
 
     md_file = args.input_file
-    html_file = args.output_file
+    orientation = "landscape" if args.landscape else "portrait"
 
     if not Path(md_file).exists():
         print(f"❌ Error: File not found: {md_file}", file=sys.stderr)
         sys.exit(1)
 
+    if args.strict_images:
+        from md_to_pdf.image_validator import validate_images
+        if not validate_images(Path(md_file), strict_mode=True):
+            sys.exit(1)
+
     print(f"Converting {md_file} to HTML with hyperlinks...")
 
     try:
-        html_file = convert_file(md_file, html_file)
+        html_file = convert_file(
+            md_file, args.output,
+            orientation=orientation,
+            font_preset=args.font_preset,
+            generate_toc=args.toc,
+            toc_depth=args.toc_depth,
+            toc_title=args.toc_title,
+            toc_position=args.toc_position,
+            toc_include_first=args.toc_include_first,
+        )
         print(f"✅ Created: {html_file}")
         print("\nTo create PDF:")
         print(f"1. Open in browser: {html_file}")

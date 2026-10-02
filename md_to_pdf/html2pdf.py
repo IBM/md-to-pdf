@@ -460,17 +460,25 @@ def main():
         description="Convert HTML to PDF with clickable links using Playwright"
     )
     parser.add_argument("input_file", help="Path to the HTML file")
-    parser.add_argument("output_file", nargs="?", help="Path for the output PDF file")
-    parser.add_argument(
+    parser.add_argument("-o", "--output", help="Path for the output PDF file")
+
+    orientation_group = parser.add_mutually_exclusive_group()
+    orientation_group.add_argument(
         "-l", "--landscape",
         action="store_true",
         help="Use landscape orientation (default: portrait)"
     )
+    orientation_group.add_argument(
+        "-p", "--portrait",
+        action="store_true",
+        help="Use portrait orientation (default, explicit)"
+    )
+
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     args = parser.parse_args()
 
     html_file = args.input_file
-    pdf_file = args.output_file
+    pdf_file = args.output
     orientation = "landscape" if args.landscape else "portrait"
 
     if not Path(html_file).exists():
