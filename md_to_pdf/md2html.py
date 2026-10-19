@@ -414,6 +414,7 @@ def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of C
 
     # Phase 5: Restore protected blocks and wrap paragraphs
     html = restore_protected_blocks(html, code_blocks, mermaid_blocks)
+    html = re.sub(r'^(<strong>[^<\n]+</strong>)$', r'<p class="bold-label">\1</p>', html, flags=re.MULTILINE)
     html = convert_paragraphs(html)
     
     # Generate and insert TOC if requested
@@ -595,9 +596,14 @@ a:hover {{
     }}
 }}
 
-h1, h2, h3, h4 {{
+h1, h2, h3, h4, h5, h6 {{
     font-family: {title_font}, sans-serif;
     font-weight: {title_weight};
+    page-break-after: avoid;
+}}
+
+/* Bold-only lines act as pseudo-headings: keep them with what follows */
+p.bold-label {{
     page-break-after: avoid;
 }}
 
