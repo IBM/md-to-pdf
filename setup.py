@@ -10,7 +10,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="md-to-pdf",
-    version="1.6.4",
+    version="1.6.5",
     author="md-to-pdf Team",
     author_email="rene.auberger@de.ibm.com",
     description="Professional Markdown to PDF converter with Mermaid diagrams, clickable links, and page orientation control",
