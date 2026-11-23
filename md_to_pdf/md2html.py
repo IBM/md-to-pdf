@@ -365,7 +365,7 @@ def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of C
     html = extract_and_protect_blocks(html, r'```(.*?)```', code_blocks, 'code')
 
     if not allow_html:
-        html = escape(html)
+        html = escape(re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL))
 
     # Phase 2: Convert structural elements
     html = convert_all_headings(html, headings, process_heading)

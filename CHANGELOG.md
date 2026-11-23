@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--allow-html` option for `md2pdf`, `md2pdf-batch` and `md2html` to pass raw HTML in Markdown through (trusted input only)
 
 ### Changed
-- Raw HTML in Markdown is now escaped by default
+- Raw HTML in Markdown is now escaped by default; HTML comments are dropped
 - `md2pdf-batch -o` mirrors the input folder structure in the output directory and rejects inputs that map to the same PDF
 - Mermaid runs with `securityLevel: 'strict'`
 - Chromium runs with JavaScript only for documents containing Mermaid diagrams and restricts local sub-resources
