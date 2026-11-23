@@ -102,7 +102,8 @@ git checkout main
 git merge <branch> --ff-only
 
 # 4. Push commit + tag — triggers GitHub Actions (builds wheel + creates GitHub Release)
-git push origin main --tags
+git push origin main
+git push origin v<VERSION>   # push only the release tag (GitHub skips workflows when >3 tags are pushed at once)
 ```
 
 Report that GitHub Actions will automatically build the wheel and create the GitHub Release.
