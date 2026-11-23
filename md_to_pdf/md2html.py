@@ -17,6 +17,8 @@ import argparse
 from md_to_pdf import __version__
 import re
 from pathlib import Path
+from md_to_pdf.safe_io import atomic_write
+
 from md_to_pdf.fonts import get_google_fonts_url, get_font_css, DEFAULT_PRESET
 
 def slugify(text):
@@ -963,7 +965,7 @@ def convert_file(md_file, html_file=None, orientation='portrait', font_preset='i
     html_doc = create_html_document(md_path.stem, html_content, orientation, font_preset)
     
     # Write HTML file
-    html_file.write_text(html_doc)
+    atomic_write(html_file, html_doc)
     
     return html_file
 

@@ -10,7 +10,9 @@ Main entry point for the md-to-pdf package.
 Converts Markdown files to PDF with support for Mermaid diagrams and clickable links.
 """
 
+import os
 import sys
+import tempfile
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
@@ -78,8 +80,14 @@ def convert_md_to_pdf(
     # Generate PDF file path if not specified
     pdf_path = md_path.with_suffix('.pdf') if pdf_file is None else Path(pdf_file)
 
-    # Generate HTML file path in the same directory as the PDF
-    html_file = pdf_path.with_suffix('.html')
+    # keep_html: predictable name next to the PDF (written symlink-safe).
+    # Otherwise: random temp file next to the Markdown (relative images keep working).
+    if keep_html:
+        html_file = pdf_path.with_suffix('.html')
+    else:
+        fd, tmp = tempfile.mkstemp(dir=md_path.parent, prefix=".md2pdf-", suffix=".html")
+        os.close(fd)
+        html_file = Path(tmp)
     
     print(f"📄 Converting {md_path.name} to PDF...")
     
@@ -88,18 +96,19 @@ def convert_md_to_pdf(
         print("   ⟶ Converting Markdown to HTML with TOC...")
     else:
         print("   ⟶ Converting Markdown to HTML...")
-    html_path = md_to_html(md_path, html_file, orientation=orientation, font_preset=font_preset,
-                           generate_toc=generate_toc, toc_depth=toc_depth, toc_title=toc_title,
-                           toc_position=toc_position, toc_include_first=toc_include_first)
-    
-    # Step 2: Convert HTML to PDF
-    print("   ⟶ Converting HTML to PDF with clickable links...")
-    pdf_path = html_to_pdf_with_links(html_path, pdf_path, orientation=orientation)
-    
-    # Remove intermediate HTML file if not keeping it
-    if not keep_html:
-        html_path.unlink(missing_ok=True)
-        print("   ⟶ Removed intermediate HTML file")
+    try:
+        html_path = md_to_html(md_path, html_file, orientation=orientation, font_preset=font_preset,
+                               generate_toc=generate_toc, toc_depth=toc_depth, toc_title=toc_title,
+                               toc_position=toc_position, toc_include_first=toc_include_first)
+        
+        # Step 2: Convert HTML to PDF
+        print("   ⟶ Converting HTML to PDF with clickable links...")
+        pdf_path = html_to_pdf_with_links(html_path, pdf_path, orientation=orientation)
+    finally:
+        # Remove intermediate HTML file if not keeping it
+        if not keep_html:
+            html_file.unlink(missing_ok=True)
+            print("   ⟶ Removed intermediate HTML file")
     
     size = pdf_path.stat().st_size / 1024
     print(f"✅ PDF created: {pdf_path.name} ({size:.1f} KB)")

@@ -17,6 +17,7 @@ from md_to_pdf import __version__
 from pathlib import Path
 
 from typing import Literal
+from md_to_pdf.safe_io import atomic_write
 from playwright.sync_api import sync_playwright, Page, TimeoutError as PlaywrightTimeout
 
 # Timeout constants (in milliseconds)
@@ -212,15 +213,15 @@ def html_to_pdf_with_links(
                 page.goto(html_path.as_uri())
                 page.wait_for_load_state('networkidle')
                 _handle_mermaid_diagrams(page)
-                page.pdf(
-                    path=str(pdf_path),
+                # No path= (Playwright would follow symlinks); write bytes safely
+                atomic_write(pdf_path, page.pdf(
                     format=PDF_FORMAT,
                     landscape=(orientation == 'landscape'),
                     print_background=True,
                     margin={'top': PDF_MARGIN_MM, 'bottom': PDF_MARGIN_MM, 'left': PDF_MARGIN_MM, 'right': PDF_MARGIN_MM},
                     display_header_footer=False,
                     prefer_css_page_size=False,
-                )
+                ))
             finally:
                 browser.close()
     except FileNotFoundError:
