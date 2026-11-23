@@ -22,6 +22,10 @@ from md_to_pdf.safe_io import atomic_write
 
 from md_to_pdf.fonts import get_google_fonts_url, get_font_css, DEFAULT_PRESET
 
+# Update MERMAID_VERSION and MERMAID_SRI together when bumping Mermaid.
+MERMAID_VERSION = "11.17.2"
+MERMAID_SRI = "sha384-EOXBFmc3gx5mb+vn0vPvvGqACToJD24hhacX5Yx+8NUUQrHIle/Qi5Bg9o3zKwW2"
+
 def slugify(text):
     """Convert heading text to URL-friendly slug for anchors"""
     # Remove special characters and convert to lowercase
@@ -481,7 +485,7 @@ def create_html_document(title, content, orientation='portrait', font_preset='ib
 <meta charset="UTF-8">
 <title>{escape(title)}</title>
 {google_fonts_links}
-<script src="https://unpkg.com/mermaid@11.17.2/dist/mermaid.min.js"></script>
+<script src="https://unpkg.com/mermaid@{MERMAID_VERSION}/dist/mermaid.min.js" integrity="{MERMAID_SRI}" crossorigin="anonymous"></script>
 <script>
 // Wait for document to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {{
