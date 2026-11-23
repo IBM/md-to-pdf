@@ -44,7 +44,7 @@ def extract_and_protect_blocks(html, pattern, block_list, block_type):
             content = escape(content, quote=False)
             content = re.sub(r'&lt;br\s*/?&gt;', '<br/>', content, flags=re.IGNORECASE)
         block_list.append(content)
-        return f'__{block_type.upper()}_BLOCK_{len(block_list)-1}__'
+        return f'\x00{block_type.upper()}_BLOCK_{len(block_list)-1}\x00'
     return re.sub(pattern, save_block, html, flags=re.DOTALL)
 
 def convert_blockquotes(html):
@@ -176,11 +176,11 @@ def restore_protected_blocks(html, code_blocks, mermaid_blocks):
     """Restore all protected blocks with proper HTML wrapping"""
     # Restore code blocks
     for i, block in enumerate(code_blocks):
-        html = html.replace(f'__CODE_BLOCK_{i}__', f'<pre><code>{block}</code></pre>')
+        html = html.replace(f'\x00CODE_BLOCK_{i}\x00', f'<pre><code>{block}</code></pre>')
     
     # Restore Mermaid blocks
     for i, block in enumerate(mermaid_blocks):
-        placeholder = f'__MERMAID_BLOCK_{i}__'
+        placeholder = f'\x00MERMAID_BLOCK_{i}\x00'
         mermaid_html = f'''<div class="mermaid-container">
 <div class="mermaid-diagram">
 <pre class="mermaid">{block}</pre>
@@ -334,7 +334,7 @@ def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of C
     md_dir = Path(md_file).resolve().parent
 
     with open(md_file, 'r') as f:
-        content = f.read()
+        content = f.read().replace('\x00', '')  # \x00 delimits block placeholders
 
     html = content
 

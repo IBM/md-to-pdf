@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Batch conversion no longer overwrites PDFs of same-named files in different folders
 - Output files are now written atomically
 - Intermediate HTML uses a unique temporary name unless `--keep-html` is set
+- Text such as `__CODE_BLOCK_0__` in a document is no longer replaced by a real code or Mermaid block
 
 ---
 
