@@ -99,6 +99,9 @@ md2pdf document.md --strict-images
 
 # Keep HTML file
 md2pdf document.md --keep-html
+
+# Pass raw HTML in the Markdown through (trusted input only)
+md2pdf document.md --allow-html
 ```
 
 ### `md2pdf-batch` - Batch Conversion
@@ -122,6 +125,8 @@ md2pdf-batch docs/ --strict-images
 md2pdf-batch docs/ --font-preset modern -r -o output/
 ```
 
+With `-o`, the folder structure of input directories is mirrored in the output directory (`docs/a/x.md` → `output/a/x.pdf`). Inputs that would produce the same PDF path are rejected before conversion starts.
+
 ### `md2html` - Markdown to HTML
 
 Convert Markdown to HTML for inspection or modification.
@@ -133,6 +138,7 @@ md2html document.md -l                     # landscape orientation
 md2html document.md --font-preset modern   # custom font preset
 md2html document.md --toc                  # generate table of contents
 md2html document.md --strict-images        # abort on missing images
+md2html document.md --allow-html           # pass raw HTML through (trusted input only)
 ```
 
 | Option | Description |
@@ -498,6 +504,13 @@ Ensure you're using the `md2pdf` command, which handles Mermaid automatically. V
 ### Links Not Clickable
 
 All commands preserve links by default. If links aren't working, ensure you're using the latest version.
+
+## Security
+
+Raw HTML in Markdown is escaped by default and shown as literal text. Use `--allow-html` only for Markdown you trust.
+
+Input is rendered by Chromium, so convert untrusted Markdown (e.g. from cloned repositories) inside a sandbox or container anyway.
+
 
 ## Requirements
 

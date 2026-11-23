@@ -71,7 +71,7 @@ JS_INITIALIZE_MERMAID = '''() => {
         mermaid.initialize({
             startOnLoad: true,
             theme: 'default',
-            securityLevel: 'loose'
+            securityLevel: 'strict'
         });
         
         // Force rendering
@@ -200,6 +200,7 @@ def html_to_pdf_with_links(
     print(f"📄 Converting {html_path.name} to PDF with clickable links...")
 
     try:
+        has_mermaid = 'class="mermaid"' in html_path.read_text(encoding="utf-8", errors="replace")
         with sync_playwright() as p:
             try:
                 browser = p.chromium.launch(headless=True)
@@ -209,10 +210,27 @@ def html_to_pdf_with_links(
                 subprocess.run(['playwright', 'install', 'chromium'], check=True)
                 browser = p.chromium.launch(headless=True)
             try:
-                page = browser.new_page()
-                page.goto(html_path.as_uri())
+                # JavaScript only for documents with Mermaid diagrams
+                context = browser.new_context(java_script_enabled=has_mermaid)
+                page = context.new_page()
+                file_url = html_path.as_uri()
+
+                def _handle_route(route):
+                    req = route.request
+                    if req.resource_type in ('document', 'subdocument', 'frame') and req.url != file_url:
+                        route.abort()
+                    elif req.resource_type in ('script', 'fetch', 'xhr', 'websocket') and req.url.startswith('file:'):
+                        route.abort()
+                    else:
+                        route.continue_()
+
+                page.route('**/*', _handle_route)
+                page.goto(file_url)
                 page.wait_for_load_state('networkidle')
-                _handle_mermaid_diagrams(page)
+                if has_mermaid:
+                    _handle_mermaid_diagrams(page)
+                else:
+                    print(MSG_NO_DIAGRAMS)
                 # No path= (Playwright would follow symlinks); write bytes safely
                 atomic_write(pdf_path, page.pdf(
                     format=PDF_FORMAT,

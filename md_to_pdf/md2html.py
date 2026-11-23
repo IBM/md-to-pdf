@@ -15,6 +15,7 @@ if hasattr(sys.stdout, "reconfigure"):
 import argparse
 
 from md_to_pdf import __version__
+from html import escape, unescape
 import re
 from pathlib import Path
 from md_to_pdf.safe_io import atomic_write
@@ -33,6 +34,11 @@ def extract_and_protect_blocks(html, pattern, block_list, block_type):
     """Generic block extraction and protection"""
     def save_block(match):
         content = match.group(1).strip() if block_type == 'mermaid' else match.group(1)
+        if block_type == 'code':
+            content = escape(content, quote=False)
+        elif block_type == 'mermaid':
+            content = escape(content, quote=False)
+            content = re.sub(r'&lt;br\s*/?&gt;', '<br/>', content, flags=re.IGNORECASE)
         block_list.append(content)
         return f'__{block_type.upper()}_BLOCK_{len(block_list)-1}__'
     return re.sub(pattern, save_block, html, flags=re.DOTALL)
@@ -44,8 +50,13 @@ def convert_blockquotes(html):
     in_blockquote = False
 
     for line in lines:
-        if line.startswith('> ') or line == '>':
-            content = line[2:] if line.startswith('> ') else ''
+        if line.startswith('> ') or line == '>' or line.startswith('&gt; ') or line == '&gt;':
+            if line.startswith('> '):
+                content = line[2:]
+            elif line.startswith('&gt; '):
+                content = line[5:]
+            else:
+                content = ''
             if not in_blockquote:
                 result.append('<blockquote>')
                 in_blockquote = True
@@ -314,7 +325,7 @@ def insert_toc(html, toc_html, position='after_title'):
     return toc_html + '\n' + html
 
 def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of Contents",
-            toc_position='after_title', toc_include_first=False):
+            toc_position='after_title', toc_include_first=False, allow_html=False):
     """Convert markdown to HTML with optional TOC"""
     md_dir = Path(md_file).resolve().parent
 
@@ -329,7 +340,7 @@ def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of C
     # Define heading processor closure
     def process_heading(match, level):
         text = match.group(1)
-        slug = slugify(text)
+        slug = slugify(unescape(text))
         
         # Handle duplicate slugs
         existing_slugs = [h[0] for h in headings]
@@ -348,6 +359,9 @@ def convert(md_file, generate_toc_flag=False, toc_depth=3, toc_title="Table of C
     code_blocks = []
     html = extract_and_protect_blocks(html, r'```mermaid\n(.*?)```', mermaid_blocks, 'mermaid')
     html = extract_and_protect_blocks(html, r'```(.*?)```', code_blocks, 'code')
+
+    if not allow_html:
+        html = escape(html)
 
     # Phase 2: Convert structural elements
     html = convert_all_headings(html, headings, process_heading)
@@ -465,7 +479,7 @@ def create_html_document(title, content, orientation='portrait', font_preset='ib
 <html>
 <head>
 <meta charset="UTF-8">
-<title>{title}</title>
+<title>{escape(title)}</title>
 {google_fonts_links}
 <script src="https://unpkg.com/mermaid@11.17.2/dist/mermaid.min.js"></script>
 <script>
@@ -488,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function() {{
     mermaid.initialize({{
         startOnLoad: true,  // Let Mermaid handle initialization
         theme: 'default',
-        securityLevel: 'loose',
+        securityLevel: 'strict',
         fontFamily: '{body_font}, sans-serif',
         flowchart: {{
             htmlLabels: true,
@@ -929,7 +943,7 @@ img {{
 
 def convert_file(md_file, html_file=None, orientation='portrait', font_preset='ibm',
                  generate_toc=False, toc_depth=3, toc_title="Table of Contents",
-                 toc_position='after_title', toc_include_first=False):
+                 toc_position='after_title', toc_include_first=False, allow_html=False):
     """
     Convert a Markdown file to an HTML file.
 
@@ -943,6 +957,7 @@ def convert_file(md_file, html_file=None, orientation='portrait', font_preset='i
         toc_title: Heading text for the TOC, default 'Table of Contents'.
         toc_position: Where to insert the TOC ('top', 'after_title', 'custom').
         toc_include_first: Whether to include the first H1 in the TOC.
+        allow_html: Pass raw HTML in the Markdown through unescaped (trusted input only), default False.
 
     Returns:
         Path to the generated HTML file.
@@ -959,7 +974,7 @@ def convert_file(md_file, html_file=None, orientation='portrait', font_preset='i
     
     # Convert markdown to HTML with TOC options
     html_content = convert(md_path, generate_toc, toc_depth, toc_title,
-                          toc_position, toc_include_first)
+                          toc_position, toc_include_first, allow_html=allow_html)
     
     # Create full HTML document with orientation and font preset
     html_doc = create_html_document(md_path.stem, html_content, orientation, font_preset)
@@ -1017,6 +1032,10 @@ def main():
         "--strict-images", action="store_true",
         help="Abort if any referenced images are missing (default: warn and continue)"
     )
+    parser.add_argument(
+        "--allow-html", action="store_true",
+        help="Pass raw HTML from the Markdown through unescaped. Only use with trusted input."
+    )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     args = parser.parse_args()
 
@@ -1044,6 +1063,7 @@ def main():
             toc_title=args.toc_title,
             toc_position=args.toc_position,
             toc_include_first=args.toc_include_first,
+            allow_html=args.allow_html,
         )
         print(f"✅ Created: {html_file}")
         print("\nTo create PDF:")

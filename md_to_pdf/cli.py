@@ -36,7 +36,8 @@ def convert_md_to_pdf(
     toc_title: str = "Table of Contents",
     toc_position: str = 'after_title',
     toc_include_first: bool = False,
-    strict_images: bool = False
+    strict_images: bool = False,
+    allow_html: bool = False
 ) -> Path:
     """
     Convert a Markdown file to PDF with clickable links and Mermaid diagrams
@@ -55,6 +56,8 @@ def convert_md_to_pdf(
         toc_position: TOC position ('top', 'after_title', 'custom')
         toc_include_first: Include first H1 heading in TOC
         strict_images: If True, abort on missing images. If False, issue warnings.
+        allow_html: If True, pass raw HTML from the Markdown through unescaped.
+                    Only use with trusted input. Defaults to False.
         
     Returns:
         Path to the generated PDF file
@@ -99,7 +102,8 @@ def convert_md_to_pdf(
     try:
         html_path = md_to_html(md_path, html_file, orientation=orientation, font_preset=font_preset,
                                generate_toc=generate_toc, toc_depth=toc_depth, toc_title=toc_title,
-                               toc_position=toc_position, toc_include_first=toc_include_first)
+                               toc_position=toc_position, toc_include_first=toc_include_first,
+                               allow_html=allow_html)
         
         # Step 2: Convert HTML to PDF
         print("   ⟶ Converting HTML to PDF with clickable links...")
@@ -213,6 +217,12 @@ Examples:
     )
     
     parser.add_argument(
+        "--allow-html",
+        action="store_true",
+        help="Pass raw HTML from the Markdown through unescaped. Only use with trusted input."
+    )
+    
+    parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}"
@@ -236,6 +246,7 @@ Examples:
             toc_position=args.toc_position,
             toc_include_first=args.toc_include_first,
             strict_images=args.strict_images,
+            allow_html=args.allow_html,
         )
     except Exception as e:
         print(f"❌ Error: {e}", file=sys.stderr)

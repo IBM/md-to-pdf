@@ -13,7 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `--allow-html` option for `md2pdf`, `md2pdf-batch` and `md2html` to pass raw HTML in Markdown through (trusted input only)
+
+### Changed
+- Raw HTML in Markdown is now escaped by default
+- `md2pdf-batch -o` mirrors the input folder structure in the output directory and rejects inputs that map to the same PDF
+- Mermaid runs with `securityLevel: 'strict'`
+- Chromium runs with JavaScript only for documents containing Mermaid diagrams and restricts local sub-resources
+
 ### Fixed
+- Batch conversion no longer overwrites PDFs of same-named files in different folders
 - Output files are now written atomically
 - Intermediate HTML uses a unique temporary name unless `--keep-html` is set
 

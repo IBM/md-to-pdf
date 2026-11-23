@@ -43,11 +43,53 @@ def find_markdown_files(path: str, recursive: bool = False) -> list[Path]:
         return list(path_obj.glob('**/*.md' if recursive else '*.md'))
     return []
 
-def _determine_output_path(md_file: Path, output_dir: Path | None) -> Path:
-    # Returns output_dir/stem.pdf or source sibling stem.pdf.
-    if output_dir:
-        return output_dir / f"{md_file.stem}.pdf"
-    return md_file.with_suffix('.pdf')
+def _determine_output_path(md_file: Path, output_dir: Path | None, base: Path | None = None) -> Path:
+    """Return the PDF path for a Markdown file.
+
+    With ``output_dir`` and ``base`` (the input directory the file was found in), the
+    path relative to ``base`` is mirrored under ``output_dir``; without ``base`` the
+    PDF goes directly into ``output_dir``. Without ``output_dir`` it sits next to the source.
+
+    Raises:
+        ValueError: If the output path would end up outside ``output_dir``.
+    """
+    if not output_dir:
+        return md_file.with_suffix('.pdf')
+    rel = md_file.relative_to(base).with_suffix('.pdf') if base else Path(f"{md_file.stem}.pdf")
+    pdf_file = output_dir / rel
+    if not pdf_file.resolve().is_relative_to(output_dir.resolve()):
+        raise ValueError(f"Output path {pdf_file} escapes output directory {output_dir}")
+    return pdf_file
+
+def _plan_jobs(
+    sources: list[tuple[Path, Path | None]],
+    output_dir: Path | None
+) -> list[tuple[Path, Path]]:
+    """Map (md_file, base) pairs to unique (md_file, pdf_file) jobs.
+
+    Identical source files (same resolved path) are converted once.
+
+    Raises:
+        ValueError: If different sources map to the same output PDF.
+    """
+    jobs: list[tuple[Path, Path]] = []
+    seen_src = set()
+    pdf_owner = {}
+    for md_file, base in sources:
+        src_key = md_file.resolve()
+        if src_key in seen_src:
+            continue
+        seen_src.add(src_key)
+        pdf_file = _determine_output_path(md_file, output_dir, base)
+        pdf_key = pdf_file.resolve()
+        if pdf_key in pdf_owner:
+            raise ValueError(
+                f"Output collision: {pdf_owner[pdf_key]} and {md_file} "
+                f"both map to {pdf_file}"
+            )
+        pdf_owner[pdf_key] = md_file
+        jobs.append((md_file, pdf_file))
+    return jobs
 
 def batch_convert(
     paths: list[str],
@@ -62,13 +104,16 @@ def batch_convert(
     toc_title: str = "Table of Contents",
     toc_position: str = 'after_title',
     toc_include_first: bool = False,
-    strict_images: bool = False
+    strict_images: bool = False,
+    allow_html: bool = False
 ) -> list[Path]:
     """Convert multiple Markdown files to PDF in parallel.
 
     Args:
         paths: File or directory paths to process.
-        output_dir: Output directory for PDF files. Defaults to same directory as source.
+        output_dir: Output directory for PDF files. The folder structure of input
+            directories is mirrored below it; single files go directly into it.
+            Defaults to the directory of each source.
         recursive: Search recursively in directories.
         keep_html: Keep intermediate HTML files.
         orientation: Page orientation, ``'portrait'`` or ``'landscape'``.
@@ -80,23 +125,33 @@ def batch_convert(
         toc_position: TOC position – ``'top'``, ``'after_title'``, or ``'custom'``.
         toc_include_first: Include first H1 heading in TOC.
         strict_images: If ``True``, return empty list on missing images instead of warning.
+        allow_html: Pass raw HTML from the Markdown through unescaped.
+            Only use with trusted input.
 
     Returns:
         List of generated PDF file paths.
 
     Raises:
-        ValueError: If ``max_workers`` is less than 1.
+        ValueError: If ``max_workers`` is less than 1, or if two different sources
+            map to the same output PDF.
     """
     if max_workers < 1:
         raise ValueError("max_workers must be at least 1")
 
-    md_files = []
+    # Find all Markdown files, remembering the input directory each came from
+    sources: list[tuple[Path, Path | None]] = []
     for path in paths:
-        md_files.extend(find_markdown_files(path, recursive))
+        base = Path(path) if Path(path).is_dir() else None
+        sources.extend((f, base) for f in find_markdown_files(path, recursive))
 
-    if not md_files:
+    if not sources:
         print("❌ No Markdown files found")
         return []
+
+    # Plan outputs (dedupe sources, detect collisions) before converting anything
+    output_path = Path(output_dir) if output_dir else None
+    jobs = _plan_jobs(sources, output_path)
+    md_files = [md_file for md_file, _ in jobs]
 
     # In strict mode: validate all files upfront before any conversion starts (fail fast).
     # In non-strict mode: per-file validation in cli.py handles warnings.
@@ -105,25 +160,24 @@ def batch_convert(
 
     print(f"🔍 Found {len(md_files)} Markdown files to convert")
 
-    output_path = None
-    if output_dir:
-        output_path = Path(output_dir)
+    if output_path:
         output_path.mkdir(parents=True, exist_ok=True)
         print(f"📁 Output directory: {output_path}")
 
     pdf_files: list[Path] = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_file = {
-            executor.submit(
+        future_to_file = {}
+        for md_file, pdf_file in jobs:
+            pdf_file.parent.mkdir(parents=True, exist_ok=True)
+            future = executor.submit(
                 convert_md_to_pdf,
                 str(md_file),
-                str(_determine_output_path(md_file, output_path)),
+                str(pdf_file),
                 keep_html, orientation, font_preset,
                 generate_toc, toc_depth, toc_title, toc_position,
-                toc_include_first, strict_images
-            ): md_file
-            for md_file in md_files
-        }
+                toc_include_first, strict_images, allow_html
+            )
+            future_to_file[future] = md_file
         for future in as_completed(future_to_file):
             md_file = future_to_file[future]
             try:
@@ -166,7 +220,7 @@ Examples:
     
     parser.add_argument(
         "-o", "--output-dir",
-        help="Output directory for PDF files"
+        help="Output directory for PDF files. The folder structure of input directories is mirrored below it"
     )
     
     parser.add_argument(
@@ -251,6 +305,12 @@ Examples:
     )
     
     parser.add_argument(
+        "--allow-html",
+        action="store_true",
+        help="Pass raw HTML from the Markdown through unescaped. Only use with trusted input."
+    )
+    
+    parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}"
@@ -279,7 +339,8 @@ def main():
             args.toc_title,
             args.toc_position,
             args.toc_include_first,
-            args.strict_images
+            args.strict_images,
+            args.allow_html
         )
         if not pdf_files:
             sys.exit(1)
