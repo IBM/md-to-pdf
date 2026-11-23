@@ -204,10 +204,12 @@ def html_to_pdf_with_links(
         with sync_playwright() as p:
             try:
                 browser = p.chromium.launch(headless=True)
-            except Exception:
+            except Exception as e:
+                if "Executable doesn't exist" not in str(e):
+                    raise
                 print("    ⟶ Chromium not found, installing automatically...")
                 import subprocess
-                subprocess.run(['playwright', 'install', 'chromium'], check=True)
+                subprocess.run([sys.executable, '-m', 'playwright', 'install', 'chromium'], check=True)
                 browser = p.chromium.launch(headless=True)
             try:
                 # JavaScript only for documents with Mermaid diagrams

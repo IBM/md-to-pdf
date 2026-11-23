@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Mermaid runs with `securityLevel: 'strict'`
 - Chromium runs with JavaScript only for documents containing Mermaid diagrams and restricts local sub-resources
 - Mermaid script is loaded with Subresource Integrity
+- Automatic Chromium installation runs via the current Python interpreter when missing
 
 ### Fixed
 - Batch conversion no longer overwrites PDFs of same-named files in different folders
